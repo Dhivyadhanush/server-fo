@@ -94,6 +94,8 @@ Then open **Settings** (gear icon) and check:
 4. **Launch at login** — recommended, so sampling and the 30-day schedule run
    without you opening the panel.
 
+<img src="docs/panel-settings.png" width="420" alt="Settings">
+
 ## History and retention
 
 - One sample every 5 minutes by default (configurable to 1/5/15/30).
@@ -212,16 +214,22 @@ quarantined.
 
 ```shell
 # 1. bump the version in build.sh (default VERSION) and CHANGELOG.md
-git commit -am "release v1.0.1"
-git tag v1.0.1 && git push --tags
+git commit -am "release v1.0.2"
+git tag v1.0.2 && git push --tags
 
-# 2. the release workflow builds a universal zip, publishes the GitHub
-#    release and — if TAP_TOKEN is set — bumps Casks/s-info.rb in
-#    Dhivyadhanush/homebrew-tap with the new checksum
+# 2. the release workflow builds a universal zip and publishes the GitHub
+#    release with RELEASE_NOTES.md
 
-# 3. users move with
+# 3. if the repository has a TAP_TOKEN secret (a PAT with contents:write on
+#    homebrew-tap) the workflow also bumps Casks/s-info.rb and its checksum;
+#    otherwise update that file by hand
+
+# 4. users move with
 brew upgrade --cask s-info
 ```
+
+Tagging v1.0.2 or later needs `TAP_TOKEN` to make step 3 automatic. Without it,
+copy the new `sha256` from the release's `.sha256` asset into the tap cask.
 
 ## License
 

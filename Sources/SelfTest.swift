@@ -300,7 +300,7 @@ enum Headless {
                 let result = try await SSH.execute(
                     Maintenance.script,
                     config: .current(),
-                    timeout: 1_800
+                    timeout: 3_600
                 ) { line in
                     print(line)
                     fflush(stdout)

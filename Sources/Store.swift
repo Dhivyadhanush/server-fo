@@ -230,7 +230,7 @@ final class Store: ObservableObject {
                 let result = try await SSH.execute(
                     Maintenance.script,
                     config: config,
-                    timeout: 1_800
+                    timeout: 3_600
                 ) { line in
                     Task { @MainActor in
                         self.appendUpgradeLine(line)
