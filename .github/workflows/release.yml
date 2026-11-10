@@ -1,0 +1,60 @@
+name: release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-14
+    env:
+      TAP_TOKEN: ${{ secrets.TAP_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build universal app
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          ARCHS="arm64 x86_64" VERSION="$VERSION" BUILD="${GITHUB_RUN_NUMBER}" ./build.sh
+          codesign --verify --deep --strict --verbose=2 build/S-Info.app
+          ./build/S-Info.app/Contents/MacOS/SInfo --selftest
+
+      - name: Package
+        run: |
+          ditto -c -k --keepParent build/S-Info.app S-Info.zip
+          shasum -a 256 S-Info.zip | awk '{print $1}' > S-Info.zip.sha256
+          echo "SHA is $(cat S-Info.zip.sha256)"
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            S-Info.zip
+            S-Info.zip.sha256
+          body_path: RELEASE_NOTES.md
+          fail_on_unmatched_files: true
+
+      - name: Bump Homebrew tap
+        if: env.TAP_TOKEN != ''
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          SHA="$(cat S-Info.zip.sha256)"
+          git clone "https://x-access-token:${TAP_TOKEN}@github.com/Dhivyadhanush/homebrew-tap.git" tap
+          mkdir -p tap/Casks
+          sed -e "s/__VERSION__/${VERSION}/" -e "s/__SHA__/${SHA}/" \
+            packaging/s-info.rb > tap/Casks/s-info.rb
+          cd tap
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add Casks/s-info.rb
+          if git diff --cached --quiet; then
+            echo "cask already current"
+            exit 0
+          fi
+          git commit -m "s-info ${VERSION}"
+          git push
