@@ -4,12 +4,12 @@
 set -euo pipefail
 cd "$(dirname "$0")"
 
-APP="build/S-Info.app"
+APP=".build/S-Info.app"
 VERSION="${VERSION:-1.1.0}"
 BUILD="${BUILD:-1}"
 # ARCHS="arm64 x86_64" produces a universal binary; default is this machine.
 ARCHS="${ARCHS:-$(uname -m)}"
-rm -rf build
+rm -rf .build
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 
 SLICES=()
@@ -37,8 +37,8 @@ for arch in $ARCHS; do
     "${PLUGIN_ARGS[@]}" \
     Sources/*.swift \
     -lsqlite3 \
-    -o "build/SInfo-$arch"
-  SLICES+=("build/SInfo-$arch")
+    -o ".build/SInfo-$arch"
+  SLICES+=(".build/SInfo-$arch")
 done
 lipo -create "${SLICES[@]}" -output "$APP/Contents/MacOS/SInfo"
 

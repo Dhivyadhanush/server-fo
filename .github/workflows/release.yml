@@ -21,12 +21,12 @@ jobs:
         run: |
           VERSION="${GITHUB_REF_NAME#v}"
           ARCHS="arm64 x86_64" VERSION="$VERSION" BUILD="${GITHUB_RUN_NUMBER}" ./build.sh
-          codesign --verify --deep --strict --verbose=2 build/S-Info.app
-          ./build/S-Info.app/Contents/MacOS/SInfo --selftest
+          codesign --verify --deep --strict --verbose=2 .build/S-Info.app
+          ./.build/S-Info.app/Contents/MacOS/SInfo --selftest
 
       - name: Package
         run: |
-          ditto -c -k --keepParent build/S-Info.app S-Info.zip
+          ditto -c -k --keepParent .build/S-Info.app S-Info.zip
           shasum -a 256 S-Info.zip | awk '{print $1}' > S-Info.zip.sha256
           echo "SHA is $(cat S-Info.zip.sha256)"
 

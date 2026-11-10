@@ -191,8 +191,11 @@ No Xcode project and no packages: `build.sh` compiles all Swift sources with
 ```shell
 ./icon.sh    # regenerates the app icon, menu bar glyph and docs/icon.png
 ./build.sh
-open build/S-Info.app
+open .build/S-Info.app
 ```
+
+Local builds land in a hidden `.build/` folder, so Spotlight and Launchpad only
+ever show the copy installed in `/Applications`.
 
 Command Line Tools on recent macOS releases ship without the SwiftUI macro
 plugin, so `build.sh` locates `libSwiftUIMacros.dylib` in the active Xcode

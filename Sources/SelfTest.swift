@@ -133,7 +133,7 @@ enum Headless {
     }
 
     private static func snapshot(_ path: String?, tab: Store.Tab = .containers) -> Never {
-        let destination = path ?? "build/snapshot.png"
+        let destination = path ?? ".build/snapshot.png"
         Task { @MainActor in
             NSApplication.shared.setActivationPolicy(.accessory)
             let store = Store()
@@ -156,7 +156,7 @@ enum Headless {
             print("usage: SInfo --snapshot-detail <container> [path]")
             exit(2)
         }
-        let destination = path ?? "build/detail-\(name).png"
+        let destination = path ?? ".build/detail-\(name).png"
         Task { @MainActor in
             NSApplication.shared.setActivationPolicy(.accessory)
             let store = Store()
@@ -174,7 +174,7 @@ enum Headless {
     }
 
     private static func settingsSnapshot(_ path: String?) -> Never {
-        let destination = path ?? "build/settings.png"
+        let destination = path ?? ".build/settings.png"
         Task { @MainActor in
             NSApplication.shared.setActivationPolicy(.accessory)
             let store = Store()
