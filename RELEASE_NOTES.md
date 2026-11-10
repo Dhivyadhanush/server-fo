@@ -1,38 +1,27 @@
-# S-Info 1.0.1
+# S-Info 1.0.2
 
-Safety and polish for the menu bar server monitor.
+A history sampling fix.
 
-## Changes
+## Fix
 
-- **A real Quit button** in the panel header and in Settings → About.
-- **Quitting is blocked while apt is running.** S-Info shows a warning and keeps
-  the app alive rather than letting Cmd-Q interrupt dpkg mid-transaction.
-- The settings sheet is slightly taller, so the maintenance card is fully
-  visible.
-- The Homebrew cask now uses the current DSL and documents `brew trust`.
+- **Sample interval is now really in minutes.** 1.0.1 read the "every 5 minutes"
+  setting as five seconds and took a sample on every refresh (every 30 seconds
+  by default). That meant about 46,000 rows a day instead of about 4,600. 1.0.2
+  uses the chosen interval properly; the default is one sample per 5 minutes.
+  Existing history is untouched and continues to age out at 30 days.
 
-## Install
+Everything from 1.0.1 is included: the Quit button, the guard that blocks
+quitting while apt runs, and the current Homebrew cask.
+
+## Install / upgrade
 
 ```shell
 brew tap Dhivyadhanush/tap
 brew trust Dhivyadhanush/tap
 brew install --cask s-info
-open /Applications/S-Info.app
-```
-
-Upgrading from 1.0.0:
-
-```shell
+# or, from 1.0.1:
 brew upgrade --cask s-info
 ```
 
-Then open Settings and point it at your server, test the connection, and enable
-**Launch at login**.
-
-## Notes
-
-- macOS 14+, key-based SSH, passwordless sudo for the upgrade feature.
-- Ad-hoc signed, not notarised. Homebrew installs are not quarantined; manual
-  downloads need one `xattr` command (see README).
-- Host CPU, memory and network totals remain intentionally out of scope; S-Info
-  shows per-application usage only.
+Ad-hoc signed, not notarised. macOS 14+, key-based SSH, passwordless sudo for
+the upgrade feature.

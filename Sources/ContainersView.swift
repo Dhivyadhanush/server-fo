@@ -477,7 +477,7 @@ struct ContainerDetailView: View {
                     }
                 }
             } else {
-                Text("History builds up as S-Info samples every \(Int(store.sampleInterval)) min. Nothing older than 30 days is kept.")
+                Text("History builds up as S-Info samples every \(Int(store.sampleInterval / 60)) min. Nothing older than 30 days is kept.")
                     .font(.system(size: 9.5))
                     .foregroundStyle(.tertiary)
             }

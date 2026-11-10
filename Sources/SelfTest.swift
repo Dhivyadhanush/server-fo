@@ -459,6 +459,9 @@ enum SelfTest {
         try? FileManager.default.removeItem(at: URL(fileURLWithPath: temporary.path + "-wal"))
         try? FileManager.default.removeItem(at: URL(fileURLWithPath: temporary.path + "-shm"))
 
+        check("sample is 5 minutes by default", SampleCadence.seconds(fromSetting: 0) == 300)
+        check("sample setting is minutes", SampleCadence.seconds(fromSetting: 15) == 900)
+
         check(
             "schedule waits 30 days",
             UpgradeSchedule.next(

@@ -97,7 +97,7 @@ struct HistoryView: View {
             SectionTitle(text: "Container usage", trailing: window.rawValue)
 
             if summaries.isEmpty {
-                Text("No samples in this window yet. S-Info records one sample every \(Int(store.sampleInterval)) minutes while the panel is refreshing.")
+                Text("No samples in this window yet. S-Info records one sample every \(Int(store.sampleInterval / 60)) minutes while the panel is refreshing.")
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
                     .padding(.vertical, 6)

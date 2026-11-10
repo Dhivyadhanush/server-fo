@@ -54,9 +54,9 @@ final class Store: ObservableObject {
         return value == 0 ? 30 : TimeInterval(max(10, value))
     }
 
+    /// The setting is in minutes; the timer works in seconds.
     var sampleInterval: TimeInterval {
-        let value = UserDefaults.standard.integer(forKey: "sinfo.sample")
-        return value == 0 ? 5 : TimeInterval(max(1, value))
+        SampleCadence.seconds(fromSetting: UserDefaults.standard.integer(forKey: "sinfo.sample"))
     }
 
     var autoUpgrade: Bool {
@@ -317,6 +317,14 @@ final class Store: ObservableObject {
         } catch {
             return error.localizedDescription
         }
+    }
+}
+
+enum SampleCadence {
+    /// A zero/absent setting means the five-minute default. Kept separate so
+    /// the selftest can pin the unit down.
+    static func seconds(fromSetting value: Int) -> TimeInterval {
+        TimeInterval((value == 0 ? 5 : max(1, value)) * 60)
     }
 }
 

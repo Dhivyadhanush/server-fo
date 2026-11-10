@@ -4,6 +4,15 @@ All notable changes to S-Info. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases use
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.2] — 2026-11-10
+
+### Fixed
+
+- The history sample interval was interpreted as seconds instead of minutes, so
+  the default "every 5 minutes" actually wrote a sample on every refresh. It now
+  samples at the chosen minute interval, keeping the 30-day database small.
+  Existing rows are left alone and age out normally.
+
 ## [1.0.1] — 2026-11-10
 
 ### Added
