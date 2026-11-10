@@ -36,6 +36,7 @@ struct SInfoApp: App {
         // bar items that refresh independently. Only the first instance stays.
         if !InstanceLock.acquire() { exit(0) }
 
+        AppearanceMode.applyCurrent()
         LoginItem.repair()
     }
 

@@ -4,30 +4,53 @@ import SwiftUI
 struct UpdatesView: View {
     @ObservedObject var store: Store
     @AppStorage("sinfo.autoUpgrade") private var autoUpgrade = true
+    @AppStorage("sinfo.showPendingPackages") private var showPending = true
+    @AppStorage("sinfo.showActivityLog") private var showActivity = true
+    @AppStorage("sinfo.showCacheAction") private var showCache = true
 
-    @State private var confirming = false
+    private enum Confirmation: Int, Identifiable {
+        case upgrade, cache
+        var id: Int { rawValue }
+    }
+
+    @State private var confirmation: Confirmation?
     @State private var expandedRun: Int64?
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 12) {
+        ScrollView(showsIndicators: false) {
+            VStack(alignment: .leading, spacing: 11) {
                 scheduleCard
-                pendingCard
+                if showCache { cacheCard }
+                if showPending { pendingCard }
                 if store.isUpgrading || !store.upgradeLines.isEmpty {
                     logCard
                 }
-                historyCard
+                if showActivity { historyCard }
                 footnote
             }
             .padding(12)
         }
-        .alert("Run apt update && apt upgrade?", isPresented: $confirming) {
-            Button("Cancel", role: .cancel) {}
-            Button("Update server") {
-                store.runUpgrade(trigger: "manual")
+        .alert(item: $confirmation) { item in
+            switch item {
+            case .upgrade:
+                return Alert(
+                    title: Text("Run apt update && apt upgrade?"),
+                    message: Text("This runs on \(SSHConfig.current().label) now. It can take several minutes and does not reboot the server if a reboot is required."),
+                    primaryButton: .cancel(),
+                    secondaryButton: .default(Text("Update server")) {
+                        store.runUpgrade(trigger: "manual")
+                    }
+                )
+            case .cache:
+                return Alert(
+                    title: Text("Clear RAM cache?"),
+                    message: Text("Drops clean page cache, dentries and inodes with sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches'. Applications keep their memory and nothing restarts. Disk reads may be briefly slower while caches refill."),
+                    primaryButton: .cancel(),
+                    secondaryButton: .destructive(Text("Clear cache")) {
+                        store.runCacheClear()
+                    }
+                )
             }
-        } message: {
-            Text("This runs on \(SSHConfig.current().label) now. It can take several minutes, and it does not reboot the server if a reboot is required.")
         }
         .onChange(of: autoUpgrade) { _, enabled in
             if enabled { store.checkSchedule() }
@@ -37,71 +60,62 @@ struct UpdatesView: View {
     // MARK: Schedule
 
     private var scheduleCard: some View {
-        VStack(alignment: .leading, spacing: 9) {
+        VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 6) {
-                Image(systemName: "shippingbox.and.arrow.backward")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Theme.accent)
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Theme.accentGradient)
+                        .opacity(0.18)
+                        .frame(width: 26, height: 26)
+                    Image(systemName: "shippingbox.and.arrow.backward.fill")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(Theme.accentText)
+                }
                 Text("System updates")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(.system(size: 12.5, weight: .bold, design: .rounded))
                 Spacer()
                 Toggle("", isOn: $autoUpgrade)
                     .toggleStyle(.switch)
-                    .tint(Theme.accent)
+                    .tint(Theme.accentText)
                     .controlSize(.mini)
                     .labelsHidden()
                     .disabled(store.isUpgrading)
             }
 
-            HStack(alignment: .top, spacing: 18) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("LAST UPGRADE")
-                        .font(.system(size: 8, weight: .semibold))
-                        .tracking(0.5)
-                        .foregroundStyle(.tertiary)
-                    Text(store.lastUpgrade.map { Fmt.dateTime($0) } ?? "never")
-                        .font(.system(size: 10, design: .monospaced))
-                    Text(Fmt.relative(store.lastUpgrade))
-                        .font(.system(size: 8.5))
-                        .foregroundStyle(.tertiary)
-                }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("NEXT RUN")
-                        .font(.system(size: 8, weight: .semibold))
-                        .tracking(0.5)
-                        .foregroundStyle(.tertiary)
-                    Text(store.nextUpgrade.map { Fmt.dateTime($0) } ?? "—")
-                        .font(.system(size: 10, design: .monospaced))
-                    Text(autoUpgrade ? remaining : "automatic runs are off")
-                        .font(.system(size: 8.5))
-                        .foregroundStyle(
-                            autoUpgrade && (store.upgradeDueIn ?? 1) <= 0 ? Theme.amber : Theme.subtle
-                        )
+            HStack(alignment: .center, spacing: 14) {
+                VStack(alignment: .leading, spacing: 7) {
+                    timeBlock("LAST UPGRADE", store.lastUpgrade.map(Fmt.dateTime) ?? "never", Fmt.relative(store.lastUpgrade))
+                    timeBlock("NEXT RUN", store.nextUpgrade.map(Fmt.dateTime) ?? "—", autoUpgrade ? remaining : "automatic runs are off")
                 }
                 Spacer(minLength: 0)
+                countdownRing
             }
 
-            HStack(spacing: 6) {
-                Button {
-                    confirming = true
-                } label: {
-                    HStack(spacing: 4) {
-                        if store.isUpgrading {
-                            ProgressView().controlSize(.mini)
-                        } else {
-                            Image(systemName: "arrow.triangle.2.circlepath")
-                                .font(.system(size: 9, weight: .semibold))
-                        }
-                        Text(store.isUpgrading ? "Updating…" : "Run update now")
-                            .font(.system(size: 10.5, weight: .semibold))
+            Button {
+                confirmation = .upgrade
+            } label: {
+                HStack(spacing: 5) {
+                    if store.isUpgrading {
+                        ProgressView().controlSize(.mini)
+                    } else {
+                        Image(systemName: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 9, weight: .bold))
                     }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 2)
+                    Text(store.isUpgrading ? "Updating…" : "Run update now")
+                        .font(.system(size: 10.5, weight: .bold))
                 }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.accent)
-                .disabled(store.isUpgrading || !store.connection.isOnline)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 3)
+            }
+            .buttonStyle(.borderedProminent)
+            .tint(Theme.accentText)
+            .disabled(store.isUpgrading || !store.connection.isOnline)
 
+            HStack(spacing: 6) {
+                Text("sudo apt update && sudo apt upgrade -y · every 30 days")
+                    .font(.system(size: 8.3, design: .monospaced))
+                    .foregroundStyle(.tertiary)
+                Spacer()
                 if let exit = store.upgradeExit, !store.isUpgrading {
                     Pill(
                         text: exit == 0 ? "completed" : "exit \(exit)",
@@ -110,19 +124,125 @@ struct UpdatesView: View {
                     )
                 }
             }
-
-            Text("Runs exactly sudo apt update && sudo apt upgrade -y every 30 days. No dist-upgrade, no autoremove, no reboot.")
-                .font(.system(size: 8.5))
-                .foregroundStyle(.tertiary)
-                .fixedSize(horizontal: false, vertical: true)
         }
         .cardStyle(padding: 11)
+    }
+
+    private func timeBlock(_ label: String, _ value: String, _ note: String) -> some View {
+        VStack(alignment: .leading, spacing: 1.5) {
+            Text(label)
+                .font(.system(size: 8, weight: .bold, design: .rounded))
+                .tracking(0.6)
+                .foregroundStyle(.tertiary)
+            Text(value)
+                .font(.system(size: 10, weight: .medium, design: .monospaced))
+                .lineLimit(1)
+            Text(note)
+                .font(.system(size: 8.3))
+                .foregroundStyle(.tertiary)
+                .lineLimit(1)
+        }
+    }
+
+    private var countdownRing: some View {
+        let interval = store.upgradeDueIn ?? UpgradeSchedule.interval
+        let progress = min(1, max(0, 1 - interval / UpgradeSchedule.interval))
+        let days = max(0, Int(ceil(interval / 86_400)))
+
+        return ZStack {
+            Circle()
+                .stroke(Theme.stroke, lineWidth: 4)
+            Circle()
+                .trim(from: 0, to: max(0.02, progress))
+                .stroke(
+                    Theme.accentGradient,
+                    style: StrokeStyle(lineWidth: 4, lineCap: .round)
+                )
+                .rotationEffect(.degrees(-90))
+                .shadow(color: Theme.accent.opacity(0.4), radius: 3)
+            VStack(spacing: -1) {
+                Text(interval <= 0 ? "now" : "\(days)")
+                    .font(.system(size: interval <= 0 ? 12 : 16, weight: .heavy, design: .rounded))
+                    .foregroundStyle(interval <= 0 ? Theme.amber : Color.primary)
+                if interval > 0 {
+                    Text(days == 1 ? "day" : "days")
+                        .font(.system(size: 7.5, weight: .semibold))
+                        .foregroundStyle(.tertiary)
+                }
+            }
+        }
+        .frame(width: 58, height: 58)
     }
 
     private var remaining: String {
         guard let interval = store.upgradeDueIn else { return "waiting for first run" }
         if interval <= 0 { return "due now" }
         return "in \(Fmt.days(interval))"
+    }
+
+    // MARK: RAM cache
+
+    private var cacheCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 6) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .fill(Theme.violetGradient)
+                        .opacity(0.18)
+                        .frame(width: 26, height: 26)
+                    Image(systemName: "memorychip.fill")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(Theme.violetText)
+                }
+                Text("RAM cache")
+                    .font(.system(size: 12.5, weight: .bold, design: .rounded))
+                Spacer()
+                if let exit = store.cacheExit, !store.isClearingCache {
+                    Pill(
+                        text: exit == 0 ? "cleared" : "exit \(exit)",
+                        color: exit == 0 ? Theme.green : Theme.red,
+                        icon: exit == 0 ? "checkmark.circle.fill" : "xmark.octagon.fill"
+                    )
+                }
+            }
+
+            Text("Drops clean page cache, dentries and inodes. Running applications keep their memory; the kernel simply rebuilds caches as needed. Nothing restarts.")
+                .font(.system(size: 9.2))
+                .foregroundStyle(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            HStack(spacing: 8) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("LAST CLEARED")
+                        .font(.system(size: 8, weight: .bold, design: .rounded))
+                        .tracking(0.5)
+                        .foregroundStyle(.tertiary)
+                    Text(store.lastCacheClear.map(Fmt.dateTime) ?? "never")
+                        .font(.system(size: 9.5, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button {
+                    confirmation = .cache
+                } label: {
+                    HStack(spacing: 4) {
+                        if store.isClearingCache {
+                            ProgressView().controlSize(.mini)
+                        } else {
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 9, weight: .bold))
+                        }
+                        Text(store.isClearingCache ? "Clearing…" : "Clear cache")
+                            .font(.system(size: 10, weight: .semibold))
+                    }
+                }
+                .buttonStyle(.bordered)
+                .tint(Theme.violetText)
+                .controlSize(.small)
+                .disabled(store.isClearingCache || store.isUpgrading || !store.connection.isOnline)
+            }
+        }
+        .cardStyle(padding: 11)
     }
 
     // MARK: Pending packages
@@ -151,9 +271,15 @@ struct UpdatesView: View {
                     .font(.system(size: 9, design: .monospaced))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
+                    .padding(7)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(
+                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            .fill(Theme.surfaceSunken)
+                    )
                 if packages.count > 12 {
                     Text("+ \(packages.count - 12) more")
-                        .font(.system(size: 8.5, weight: .medium))
+                        .font(.system(size: 8.5, weight: .semibold))
                         .foregroundStyle(.tertiary)
                 }
             }
@@ -219,7 +345,11 @@ struct UpdatesView: View {
             .frame(height: 170)
             .background(
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(Color.black.opacity(0.18))
+                    .fill(Theme.surfaceSunken)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            .strokeBorder(Theme.stroke, lineWidth: 0.8)
+                    )
             )
             .onChange(of: store.upgradeLines.count) { _, _ in
                 proxy.scrollTo("end", anchor: .bottom)
@@ -236,14 +366,14 @@ struct UpdatesView: View {
         return Color.primary.opacity(0.72)
     }
 
-    // MARK: History
+    // MARK: Activity
 
     private var historyCard: some View {
         VStack(alignment: .leading, spacing: 6) {
-            SectionTitle(text: "Upgrade log", trailing: "30 days")
+            SectionTitle(text: "Activity log", trailing: "30 days")
 
             if store.upgradeHistory.isEmpty {
-                Text("No upgrade runs recorded yet.")
+                Text("No upgrade or cache runs recorded yet.")
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
             } else {
@@ -254,28 +384,39 @@ struct UpdatesView: View {
                 }
             }
         }
-        .cardStyle(padding: 10)
+        .cardStyle(padding: 11)
     }
 
     private func runRow(_ run: MaintenanceRun) -> some View {
         let open = expandedRun == run.id
+        let cache = run.trigger == "cache"
         return VStack(spacing: 0) {
             Button {
-                expandedRun = open ? nil : run.id
+                withAnimation(.easeOut(duration: 0.15)) {
+                    expandedRun = open ? nil : run.id
+                }
             } label: {
                 HStack(spacing: 6) {
-                    Image(systemName: run.succeeded ? "checkmark.circle.fill" : "xmark.octagon.fill")
-                        .font(.system(size: 9))
-                        .foregroundStyle(run.succeeded ? Theme.green : Theme.red)
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 5, style: .continuous)
+                            .fill((cache ? Theme.violetText : Theme.accentText).opacity(0.12))
+                            .frame(width: 18, height: 18)
+                        Image(systemName: cache ? "memorychip.fill" : "shippingbox.fill")
+                            .font(.system(size: 7.5, weight: .bold))
+                            .foregroundStyle(cache ? Theme.violetText : Theme.accentText)
+                    }
+                    Text(cache ? "RAM cache" : "Packages")
+                        .font(.system(size: 9.5, weight: .medium))
                     Text(Fmt.dateTime(run.started))
-                        .font(.system(size: 9.5, design: .monospaced))
-                    Text(run.trigger)
-                        .font(.system(size: 8))
-                        .foregroundStyle(.tertiary)
+                        .font(.system(size: 9, design: .monospaced))
+                        .foregroundStyle(.secondary)
                     Spacer()
+                    Image(systemName: run.succeeded ? "checkmark.circle.fill" : "xmark.octagon.fill")
+                        .font(.system(size: 8))
+                        .foregroundStyle(run.succeeded ? Theme.green : Theme.red)
                     if let finished = run.finished {
                         Text(Fmt.duration(finished.timeIntervalSince(run.started)))
-                            .font(.system(size: 8.5, design: .monospaced))
+                            .font(.system(size: 8.3, design: .monospaced))
                             .foregroundStyle(.tertiary)
                     }
                     Image(systemName: open ? "chevron.down" : "chevron.right")
@@ -283,7 +424,7 @@ struct UpdatesView: View {
                         .foregroundStyle(.quaternary)
                 }
                 .padding(.horizontal, 4)
-                .padding(.vertical, 5)
+                .padding(.vertical, 5.5)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -297,26 +438,26 @@ struct UpdatesView: View {
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(6)
                 }
-                .frame(height: 140)
+                .frame(height: 130)
                 .background(
                     RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(Color.black.opacity(0.14))
+                        .fill(Theme.surfaceSunken)
                 )
                 .padding(.bottom, 5)
             }
 
             if run.id != store.upgradeHistory.last?.id {
-                Divider().opacity(0.25)
+                Divider().opacity(0.2).padding(.leading, 24)
             }
         }
     }
 
     private var footnote: some View {
         HStack(alignment: .top, spacing: 6) {
-            Image(systemName: "lock.shield")
+            Image(systemName: "lock.shield.fill")
                 .font(.system(size: 9))
-                .foregroundStyle(.tertiary)
-            Text("Commands run over SSH with your key, using passwordless sudo. Only the output of apt is stored, on this Mac, and it is deleted after 30 days.")
+                .foregroundStyle(Theme.accentText.opacity(0.8))
+            Text("Commands run over SSH with your key and passwordless sudo. Output is stored on this Mac and deleted after 30 days. S-Info never reboots the server.")
                 .font(.system(size: 8.5))
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)

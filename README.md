@@ -3,8 +3,10 @@
 <img src="docs/icon.png" width="96" align="right" alt="S-Info icon">
 
 A macOS menu bar app for **one server over SSH**: what is running in Docker,
-what each application is using, a rolling 30-day history, and a scheduled
-`apt` upgrade with logs.
+what each application is using, a rolling 30-day history, a scheduled `apt`
+upgrade with logs, and a button to clear the server's RAM cache. The interface
+follows the system theme, has a light/dark override, and lets you hide anything
+you do not want to see.
 
 S-Info deliberately does **not** show host CPU, overall RAM, or network totals —
 the [dynamic island](https://github.com/Dhivyadhanush/islet) already tracks the
@@ -12,8 +14,8 @@ machine. This app answers a narrower question: *which application on the server
 is doing what, and is the box up to date?*
 
 <p align="center">
-  <img src="docs/panel.png" width="420" alt="Container list">
-  <img src="docs/panel-detail.png" width="420" alt="Container detail">
+  <img src="docs/panel.png" width="420" alt="Container list, dark">
+  <img src="docs/panel-light.png" width="420" alt="Container list, light">
 </p>
 
 ## What it shows
@@ -28,12 +30,12 @@ rx/tx, block I/O, PIDs and restart policy. Plus the image, command, compose
 project and working directory, and on-demand mounts and the last 80 log lines.
 
 **History** — a local SQLite database sampled every 5 minutes: CPU/memory series
-per container, start/stop/restart/health events, and every upgrade log. Rolling
+per container, start/stop/restart/health events, and every maintenance run. Rolling
 **30-day retention** is enforced automatically; older rows are deleted at launch,
 hourly while sampling, and after every upgrade.
 
-**Updates** — the pending package list, a reboot-required badge, and one button
-that runs exactly:
+**Updates** — the pending package list, a reboot-required badge, a RAM cache
+action, and one button that runs exactly:
 
 ```shell
 sudo apt update && sudo apt upgrade -y
@@ -45,8 +47,23 @@ line by line, and retries the next day if it fails. Nothing else is ever run: no
 
 <p align="center">
   <img src="docs/panel-history.png" width="420" alt="30-day history">
-  <img src="docs/panel-updates.png" width="420" alt="Updates and upgrade log">
+  <img src="docs/panel-updates.png" width="420" alt="Updates, cache action and activity log">
 </p>
+
+## Appearance and visibility
+
+- **Theme** follows macOS by default. **Settings → Appearance** can force Light
+  or Dark. The gradient canvas, grid, glows, charts and status colours adapt to
+  both appearances.
+- **Settings → What is visible** controls the panel piece by piece: status pill,
+  hostname, footer, menu bar dot and count; the History and Updates tabs;
+  image / uptime / ports / health / restarts / CPU / memory / stack counts on
+  each container row; detail metrics, charts, mounts & logs; history events,
+  pending package list, activity log and the RAM cache action.
+- Toggles apply instantly and are remembered. Hidden sections stay in the
+  database; only the UI changes. **Show everything** resets the lot.
+- The app icon and the menu bar glyph are the same two-unit rack, drawn from one
+  shape at build time.
 
 ## How it connects
 
@@ -62,8 +79,9 @@ Requirements:
   work without a password).
 - Docker accessible to that SSH user (`docker ps` without `sudo`, usually via the
   `docker` group).
-- Passwordless sudo **only for the upgrade feature** (`sudo -n true` succeeds).
-  Viewing containers and history works without it.
+- Passwordless sudo for the two maintenance actions (`sudo -n true` succeeds):
+  `apt` upgrades and the RAM cache drop. Viewing containers and history works
+  without it.
 
 New host keys are accepted on first connection
 (`StrictHostKeyChecking=accept-new`). Everything runs over one SSH round trip per
@@ -110,13 +128,27 @@ The app samples while it is running; the menu bar label starts the refresh timer
 at login even if the panel has never been opened. If the Mac is asleep at the
 due time, the upgrade runs at the first refresh after wake.
 
+## RAM cache
+
+**Updates → RAM cache → Clear cache** runs, after a `sync`:
+
+```shell
+sudo -n sh -c 'echo 3 > /proc/sys/vm/drop_caches'
+```
+
+This drops clean page cache, dentries and inodes. It does not free memory held
+by running applications and restarts nothing; disk reads can be briefly slower
+while the kernel rebuilds caches. The run and its output are stored in the local
+activity log with the same 30-day retention. It needs passwordless sudo for
+`sh`, not only `apt`.
+
 ## The 30-day upgrade
 
 The first run is scheduled **30 days after first launch**. A successful run
 resets the timer; a failed run retries after 24 hours. The panel shows the last
 run, the next run and a countdown. Each run is stored in the local database with
 its trigger (manual or scheduled), duration, exit code and output, and is
-pruned with everything else after 30 days.
+pruned with everything else after 30 days. Cache clears share the same log.
 
 `apt upgrade` can install a new kernel or library. The app reports
 `reboot required` when `/var/run/reboot-required` exists but **never reboots the
@@ -138,6 +170,7 @@ $S --sample            # fetch and write one history sample now
 $S --prune             # delete rows older than 30 days
 $S --upgrade           # run apt update && apt upgrade -y now, headless
 $S --upgrade-if-due    # run only if the 30-day timer says so
+$S --clear-cache       # sync and drop the Linux page cache now, headless
 $S --update            # check GitHub for a newer release
 $S --loginitem on|off  # manage the LaunchAgent
 $S --selftest          # parser, byte units, schedule and retention tests
@@ -156,7 +189,7 @@ No Xcode project and no packages: `build.sh` compiles all Swift sources with
 `swiftc`, links `libsqlite3`, and writes a hand-made `.app`.
 
 ```shell
-./icon.sh    # only after changing Resources/AppIcon-source.png or the glyph
+./icon.sh    # regenerates the app icon, menu bar glyph and docs/icon.png
 ./build.sh
 open build/S-Info.app
 ```
@@ -166,14 +199,14 @@ plugin, so `build.sh` locates `libSwiftUIMacros.dylib` in the active Xcode
 toolchain and passes `-plugin-path` when needed. Build a universal app with:
 
 ```shell
-ARCHS="arm64 x86_64" VERSION=1.0.3 ./build.sh
+ARCHS="arm64 x86_64" VERSION=1.1.0 ./build.sh
 ```
 
 Layout:
 
 ```
 Sources/        app, SSH, parsing, SQLite history, views
-Resources/      icon source, generated icns and menu bar glyphs
+Resources/      icon generator, generated icns and menu bar glyphs
 docs/           screenshots used by this README
 build.sh        swiftc + lipo + Info.plist + ad-hoc codesign
 .github/        tag-driven release workflow
@@ -182,12 +215,13 @@ build.sh        swiftc + lipo + Info.plist + ad-hoc codesign
 ## Security notes
 
 - No credential storage: SSH keys stay in `~/.ssh` / the agent.
-- The only stored server data is Docker state and apt output, in the local
-  history database.
+- The only stored server data is Docker state, apt output and cache-clear output,
+  in the local history database.
 - The packaged app is ad-hoc signed and not notarised. Build it yourself if you
   prefer; the source is the whole product.
-- The upgrade runs `sudo -n` (never prompts) and requires a working passwordless
-  sudo rule. If the rule is absent, the run fails and is logged; nothing hangs.
+- Maintenance runs use `sudo -n` (never prompt) and require a working
+  passwordless sudo rule. If the rule is absent, the run fails and is logged;
+  nothing hangs.
 
 ## Troubleshooting
 
@@ -200,8 +234,12 @@ first. The app cannot answer a password prompt; set up a key
 the test.
 
 **Upgrade fails with exit 1.** Confirm the sudo rule with
-`ssh server1@… 'sudo -n true'`, then open the run in the upgrade log to read the
-apt error.
+`ssh server1@… 'sudo -n true'`, then open the run in the activity log to read
+the apt error.
+
+**Cache clear fails with exit 1.** The sudo rule does not allow `sh`. Grant it
+for `/usr/bin/sh` (or the equivalent) and try again; the error is in the
+activity log.
 
 **History panel is empty.** History starts with the first sample. Click
 `--sample` or wait for the next 5-minute sample; the app must be running.
@@ -214,8 +252,8 @@ quarantined.
 
 ```shell
 # 1. bump the version in build.sh (default VERSION) and CHANGELOG.md
-git commit -am "release v1.0.2"
-git tag v1.0.2 && git push --tags
+git commit -am "release v1.1.0"
+git tag v1.1.0 && git push --tags
 
 # 2. the release workflow builds a universal zip and publishes the GitHub
 #    release with RELEASE_NOTES.md
@@ -228,7 +266,7 @@ git tag v1.0.2 && git push --tags
 brew upgrade --cask s-info
 ```
 
-Tagging v1.0.2 or later needs `TAP_TOKEN` to make step 3 automatic. Without it,
+Tagging a release needs `TAP_TOKEN` to make step 3 automatic. Without it,
 copy the new `sha256` from the release's `.sha256` asset into the tap cask.
 
 ## License

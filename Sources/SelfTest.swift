@@ -33,6 +33,8 @@ enum Headless {
             settingsSnapshot(arguments.dropFirst().first)
         case "--prune":
             prune()
+        case "--clear-cache":
+            clearCache()
         case "--upgrade":
             upgradeIfRequested(force: true)
         case "--upgrade-if-due":
@@ -139,7 +141,7 @@ enum Headless {
             await waitForProbe(store)
 
             let root = ZStack {
-                Color(nsColor: .windowBackgroundColor)
+                AppBackground()
                 PanelView(store: store, initialTab: tab)
             }
             .frame(width: Theme.panelWidth, height: Theme.panelHeight)
@@ -161,7 +163,7 @@ enum Headless {
             store.start()
             await waitForProbe(store)
             let root = ZStack {
-                Color(nsColor: .windowBackgroundColor)
+                AppBackground()
                 ContainerDetailView(store: store, name: name, onBack: {})
             }
             .frame(width: Theme.panelWidth, height: Theme.panelHeight)
@@ -179,7 +181,7 @@ enum Headless {
             store.start()
             await waitForProbe(store)
             let root = ZStack {
-                Color(nsColor: .windowBackgroundColor)
+                AppBackground()
                 SettingsView(store: store)
             }
             exit(await render(root, to: destination) ? 0 : 1)
@@ -198,8 +200,13 @@ enum Headless {
 
     @MainActor
     private static func render<V: View>(_ view: V, to destination: String) async -> Bool {
+        switch ProcessInfo.processInfo.environment["SINFO_SNAPSHOT_SCHEME"]?.lowercased() {
+        case "light": NSApp.appearance = NSAppearance(named: .aqua)
+        case "dark": NSApp.appearance = NSAppearance(named: .darkAqua)
+        default: break
+        }
+
         let hosting = NSHostingView(rootView: view)
-        hosting.appearance = NSAppearance(named: .darkAqua)
         hosting.frame = NSRect(x: 0, y: 0, width: Theme.panelWidth, height: Theme.panelHeight)
 
         let window = NSWindow(
@@ -259,6 +266,47 @@ enum Headless {
             lock.lock()
             defer { lock.unlock() }
             return lines.joined(separator: "\n")
+        }
+    }
+
+    private static func clearCache() -> Never {
+        runAndExit {
+            let started = Date()
+            let box = LineBox()
+            var code: Int32 = -1
+
+            do {
+                let result = try await SSH.execute(
+                    Maintenance.cacheScript,
+                    config: .current(),
+                    timeout: 120
+                ) { line in
+                    print(line)
+                    fflush(stdout)
+                    box.append(line)
+                }
+                code = result.code
+            } catch {
+                let message = "error: \(error.localizedDescription)"
+                print(message)
+                box.append(message)
+            }
+
+            let finished = Date()
+            let history = HistoryStore()
+            history.addMaintenance(
+                started: started,
+                finished: finished,
+                trigger: "cache",
+                exitCode: Int(code),
+                output: box.text
+            )
+            if code == 0 {
+                history.setMeta("lastCacheClear", String(finished.timeIntervalSince1970))
+            }
+            history.prune()
+            print("exit \(code)")
+            return code
         }
     }
 

@@ -37,6 +37,10 @@ final class Store: ObservableObject {
     @Published private(set) var upgradeHistory: [MaintenanceRun] = []
     @Published private(set) var historyStats: HistoryStats?
 
+    @Published private(set) var isClearingCache = false
+    @Published private(set) var cacheExit: Int?
+    @Published private(set) var lastCacheClear: Date?
+
     @Published var latestVersion: String?
 
     let history = HistoryStore()
@@ -46,6 +50,7 @@ final class Store: ObservableObject {
         static let lastUpgrade = "lastUpgrade"
         static let lastAttempt = "lastAttempt"
         static let firstSeen = "firstSeen"
+        static let lastCacheClear = "lastCacheClear"
     }
 
     // Settings, read live so a change in the sheet applies without a restart.
@@ -100,6 +105,9 @@ final class Store: ObservableObject {
         }
         if let raw = history.meta(Self.Keys.lastAttempt), let epoch = Double(raw) {
             lastAttempt = Date(timeIntervalSince1970: epoch)
+        }
+        if let raw = history.meta(Self.Keys.lastCacheClear), let epoch = Double(raw) {
+            lastCacheClear = Date(timeIntervalSince1970: epoch)
         }
 
         history.prune()
@@ -207,7 +215,7 @@ final class Store: ObservableObject {
     // MARK: Maintenance
 
     func checkSchedule() {
-        guard autoUpgrade, !isUpgrading, connection.isOnline else { return }
+        guard autoUpgrade, !isUpgrading, !isClearingCache, connection.isOnline else { return }
         guard Date().timeIntervalSince(lastScheduleCheck) > 30 else { return }
         lastScheduleCheck = Date()
         guard let nextUpgrade, nextUpgrade <= Date() else { return }
@@ -215,7 +223,7 @@ final class Store: ObservableObject {
     }
 
     func runUpgrade(trigger: String) {
-        guard !isUpgrading else { return }
+        guard !isUpgrading, !isClearingCache else { return }
         let config = SSHConfig.current()
         let isScheduled = trigger == "scheduled"
 
@@ -275,6 +283,51 @@ final class Store: ObservableObject {
 
             reloadHistory()
             refresh()
+        }
+    }
+
+    // MARK: RAM cache
+
+    /// Drops Linux page cache, dentries and inodes. This is not "freeing app
+    /// memory"; it discards clean caches the kernel will rebuild on demand.
+    func runCacheClear() {
+        guard !isClearingCache, !isUpgrading else { return }
+        isClearingCache = true
+        cacheExit = nil
+        let started = Date()
+
+        Task {
+            var output = ""
+            var code = -1
+
+            do {
+                let result = try await SSH.execute(
+                    Maintenance.cacheScript,
+                    config: .current(),
+                    timeout: 120
+                )
+                code = Int(result.code)
+                output = result.output
+            } catch {
+                output = "error: \(error.localizedDescription)"
+            }
+
+            let finished = Date()
+            history.addMaintenance(
+                started: started,
+                finished: finished,
+                trigger: "cache",
+                exitCode: code,
+                output: output
+            )
+            if code == 0 {
+                history.setMeta(Self.Keys.lastCacheClear, String(finished.timeIntervalSince1970))
+                lastCacheClear = finished
+            }
+            history.prune()
+            reloadHistory()
+            cacheExit = code
+            isClearingCache = false
         }
     }
 
@@ -373,6 +426,22 @@ enum Maintenance {
     echo "[sinfo] $(date -Is) apt upgrade exited $rc"
     if [ -f /var/run/reboot-required ]; then
       echo "[sinfo] reboot required: $(cat /var/run/reboot-required 2>/dev/null)"
+    fi
+    exit $rc
+    """
+
+    /// Linux page cache, dentries and inodes. Only clean caches are dropped;
+    /// running applications are not touched and nothing is restarted.
+    static let cacheScript = """
+    export LC_ALL=C
+    echo "[sinfo] $(date -Is) sync"
+    sync
+    echo "[sinfo] $(date -Is) dropping page cache, dentries and inodes"
+    sudo -n sh -c 'echo 3 > /proc/sys/vm/drop_caches'
+    rc=$?
+    echo "[sinfo] cache clear exited $rc"
+    if [ $rc -ne 0 ]; then
+      echo "[sinfo] passwordless sudo for sh is required to drop caches"
     fi
     exit $rc
     """

@@ -41,6 +41,13 @@ struct PanelView: View {
 
     @State private var tab: Store.Tab
     @State private var showSettings = false
+    @Namespace private var tabNamespace
+
+    @AppStorage("sinfo.showHistoryTab") private var showHistoryTab = true
+    @AppStorage("sinfo.showUpdatesTab") private var showUpdatesTab = true
+    @AppStorage("sinfo.showStatusPill") private var showStatusPill = true
+    @AppStorage("sinfo.showHost") private var showHost = true
+    @AppStorage("sinfo.showFooter") private var showFooter = true
 
     init(store: Store, initialTab: Store.Tab = .containers) {
         self.store = store
@@ -49,139 +56,189 @@ struct PanelView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            header
-            tabBar
-            Divider().opacity(0.4)
-            content
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            Divider().opacity(0.4)
-            footer
+        ZStack {
+            AppBackground()
+
+            VStack(spacing: 0) {
+                header
+                if visibleTabs.count > 1 { tabBar }
+                content
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                if showFooter {
+                    Divider().opacity(0.25)
+                    footer
+                }
+            }
         }
         .frame(
             width: Theme.panelWidth,
             height: min(Theme.panelHeight, (NSScreen.main?.visibleFrame.height ?? 700) - 40)
         )
-        .onAppear { store.start() }
+        .onAppear {
+            store.start()
+            if !visibleTabs.contains(tab) { tab = .containers }
+        }
+        .onChange(of: showHistoryTab) { _, _ in repairTab() }
+        .onChange(of: showUpdatesTab) { _, _ in repairTab() }
         .sheet(isPresented: $showSettings) {
             SettingsView(store: store)
         }
     }
 
+    private var visibleTabs: [Store.Tab] {
+        var result: [Store.Tab] = [.containers]
+        if showHistoryTab { result.append(.history) }
+        if showUpdatesTab { result.append(.updates) }
+        return result
+    }
+
+    private func repairTab() {
+        if !visibleTabs.contains(tab) { tab = .containers }
+    }
+
+    // MARK: Header
+
     private var header: some View {
-        HStack(spacing: 10) {
-            if let icon = AppAssets.appIcon {
-                Image(nsImage: icon)
-                    .resizable()
-                    .frame(width: 30, height: 30)
-                    .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-            } else {
-                Image(systemName: "server.rack")
-                    .font(.system(size: 22))
-            }
+        HStack(spacing: 11) {
+            iconBadge
 
             VStack(alignment: .leading, spacing: 2) {
                 Text("S-Info")
-                    .font(.system(size: 15, weight: .bold))
-                HStack(spacing: 5) {
-                    if let probe = store.probe {
-                        Text(probe.hostname.isEmpty ? "server" : probe.hostname)
-                        Text("·")
-                        Text(shortOS(probe.os))
-                    } else {
-                        Text("Server details")
+                    .font(.system(size: 16, weight: .heavy, design: .rounded))
+                    .tracking(-0.2)
+
+                if showHost {
+                    HStack(spacing: 5) {
+                        Circle()
+                            .fill(store.connection.isOnline ? Theme.green : Theme.gray.opacity(0.5))
+                            .frame(width: 4, height: 4)
+                        Text(hostLine)
+                            .font(.system(size: 10))
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
                     }
                 }
-                .font(.system(size: 10.5))
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
             }
 
             Spacer(minLength: 4)
 
-            statusPill
+            if showStatusPill { statusPill }
 
-            Button {
+            GlassIconButton(
+                icon: "arrow.clockwise",
+                help: "Refresh now",
+                spinning: store.isRefreshing
+            ) {
                 store.refresh()
-            } label: {
-                if store.isRefreshing {
-                    ProgressView().controlSize(.small)
-                } else {
-                    Image(systemName: "arrow.clockwise").font(.system(size: 11, weight: .semibold))
-                }
             }
-            .buttonStyle(.borderless)
             .disabled(store.isRefreshing)
-            .help("Refresh now")
 
-            Button {
+            GlassIconButton(icon: "slider.horizontal.3", help: "Settings") {
                 showSettings = true
-            } label: {
-                Image(systemName: "gearshape").font(.system(size: 12))
             }
-            .buttonStyle(.borderless)
-            .help("Settings")
 
-            Button {
+            GlassIconButton(icon: "power", help: "Quit S-Info") {
                 NSApp.terminate(nil)
-            } label: {
-                Image(systemName: "power").font(.system(size: 11, weight: .medium))
             }
-            .buttonStyle(.borderless)
-            .help("Quit S-Info")
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.top, 13)
+        .padding(.bottom, 11)
+    }
+
+    private var iconBadge: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 11, style: .continuous)
+                .fill(Theme.accent.opacity(0.18))
+                .blur(radius: 7)
+                .frame(width: 36, height: 36)
+
+            if let icon = AppAssets.appIcon {
+                Image(nsImage: icon)
+                    .resizable()
+                    .frame(width: 34, height: 34)
+                    .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .strokeBorder(.white.opacity(0.14), lineWidth: 0.8)
+                    )
+            } else {
+                Image(systemName: "server.rack")
+                    .font(.system(size: 22))
+                    .foregroundStyle(Theme.accentText)
+            }
+        }
+        .frame(width: 34, height: 34)
+    }
+
+    private var hostLine: String {
+        guard let probe = store.probe else { return "Connecting to \(SSHConfig.current().label)" }
+        let os = shortOS(probe.os)
+        return os.isEmpty ? probe.hostname : "\(probe.hostname) · \(os)"
     }
 
     @ViewBuilder
     private var statusPill: some View {
         switch store.connection {
         case .online:
-            Pill(text: "Online", color: Theme.green, icon: "checkmark.circle.fill")
+            Pill(text: "Online", color: Theme.green, icon: "checkmark.circle.fill", glass: true)
         case .connecting:
-            Pill(text: "Connecting", color: Theme.blue, icon: "ellipsis")
+            Pill(text: "Linking", color: Theme.accentDeep, icon: "ellipsis", glass: true)
         case .unreachable:
-            Pill(text: "Offline", color: Theme.red, icon: "exclamationmark.triangle.fill")
+            Pill(text: "Offline", color: Theme.red, icon: "exclamationmark.triangle.fill", glass: true)
         case .idle:
-            Pill(text: "Idle", color: Theme.gray, icon: nil)
+            Pill(text: "Idle", color: Theme.gray, icon: nil, glass: true)
         }
     }
 
+    // MARK: Tabs
+
     private var tabBar: some View {
-        HStack(spacing: 2) {
-            ForEach(Store.Tab.allCases) { item in
+        HStack(spacing: 3) {
+            ForEach(visibleTabs) { item in
                 Button {
-                    tab = item
+                    withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+                        tab = item
+                    }
                 } label: {
                     HStack(spacing: 4) {
+                        Image(systemName: item.icon)
+                            .font(.system(size: 9, weight: .semibold))
                         Text(item.rawValue)
-                            .font(.system(size: 11, weight: tab == item ? .semibold : .regular))
+                            .font(.system(size: 10.5, weight: .semibold))
                         if item == .updates, let count = store.probe?.aptUpgradable.count, count > 0 {
                             Text("\(count)")
-                                .font(.system(size: 8.5, weight: .bold, design: .rounded))
+                                .font(.system(size: 8, weight: .bold, design: .rounded))
                                 .padding(.horizontal, 4)
                                 .padding(.vertical, 1)
-                                .background(Capsule().fill(Theme.amber.opacity(0.22)))
-                                .foregroundStyle(Theme.amber)
+                                .background(Capsule().fill(Color.black.opacity(tab == item ? 0.18 : 0.35)))
+                                .foregroundStyle(tab == item ? Color.black.opacity(0.75) : Theme.amber)
                         }
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 5)
+                    .padding(.vertical, 5.5)
                     .contentShape(Rectangle())
+                    .foregroundStyle(tab == item ? Color.black.opacity(0.86) : Color.secondary)
+                    .background {
+                        if tab == item {
+                            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                                .fill(Theme.accentGradient)
+                                .shadow(color: Theme.accent.opacity(0.35), radius: 6, y: 2)
+                                .matchedGeometryEffect(id: "tab", in: tabNamespace)
+                        }
+                    }
                 }
                 .buttonStyle(.plain)
-                .foregroundStyle(tab == item ? .primary : .secondary)
-                .background(
-                    RoundedRectangle(cornerRadius: 6, style: .continuous)
-                        .fill(tab == item ? Color.primary.opacity(0.09) : .clear)
-                )
             }
         }
-        .padding(2)
+        .padding(3)
         .background(
-            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                .fill(Color.primary.opacity(0.045))
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Theme.surfaceSunken)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .strokeBorder(Theme.stroke, lineWidth: 0.8)
+                )
         )
         .padding(.horizontal, 14)
         .padding(.bottom, 10)
@@ -199,6 +256,8 @@ struct PanelView: View {
         }
     }
 
+    // MARK: Footer
+
     private var footer: some View {
         HStack(spacing: 6) {
             if case .unreachable = store.connection, let error = store.lastError {
@@ -209,6 +268,9 @@ struct PanelView: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
             } else {
+                Circle()
+                    .fill(Theme.accent.opacity(0.7))
+                    .frame(width: 4, height: 4)
                 Text("Updated \(Fmt.relative(store.lastUpdated))")
             }
             Spacer(minLength: 8)
@@ -219,7 +281,7 @@ struct PanelView: View {
             }
             Text("· 30-day history")
         }
-        .font(.system(size: 9))
+        .font(.system(size: 9, design: .monospaced))
         .foregroundStyle(.tertiary)
         .padding(.horizontal, 14)
         .padding(.vertical, 7)
@@ -233,10 +295,21 @@ struct PanelView: View {
     }
 }
 
+extension Store.Tab {
+    var icon: String {
+        switch self {
+        case .containers: return "square.stack.3d.up.fill"
+        case .history: return "chart.xyaxis.line"
+        case .updates: return "bolt.badge.clock.fill"
+        }
+    }
+}
+
 // MARK: - Menu bar label
 
 struct MenuBarLabel: View {
     @ObservedObject var store: Store
+    @AppStorage("sinfo.showMenuDot") private var showDot = true
 
     var body: some View {
         HStack(spacing: 2) {
@@ -253,7 +326,7 @@ struct MenuBarLabel: View {
             }
         }
         .overlay(alignment: .bottomTrailing) {
-            if let color = statusColor {
+            if showDot, let color = statusColor {
                 Circle()
                     .fill(color)
                     .frame(width: 4, height: 4)
@@ -263,7 +336,10 @@ struct MenuBarLabel: View {
         // The label is installed at launch and stays alive for the whole
         // session, so this is what starts background sampling and the 30-day
         // upgrade timer even when the panel has never been opened.
-        .onAppear { store.start() }
+        .onAppear {
+            store.start()
+            AppearanceMode.applyCurrent()
+        }
         .help(helpText)
     }
 

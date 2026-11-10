@@ -82,7 +82,7 @@ enum SSH {
         _ script: String,
         config: SSHConfig,
         timeout: TimeInterval,
-        onLine: ((String) -> Void)?
+        onLine: ((String) -> Void)? = nil
     ) async throws -> (code: Int32, output: String) {
         guard config.isValid else { throw SSHError.notConfigured }
 

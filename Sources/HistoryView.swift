@@ -26,22 +26,24 @@ struct HistoryView: View {
     @State private var loading = false
     @State private var loaded = false
 
+    @AppStorage("sinfo.showHistoryEvents") private var showEvents = true
+
     var body: some View {
         VStack(spacing: 8) {
             toolbar
             if loading && !loaded {
-                VStack(spacing: 8) {
+                VStack(spacing: 9) {
                     ProgressView().controlSize(.small)
-                    Text("Reading history…")
+                    Text("Reading 30-day history…")
                         .font(.system(size: 10.5))
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 12) {
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 11) {
                         containersCard
-                        eventsCard
+                        if showEvents { eventsCard }
                         retentionCard
                     }
                     .padding(.horizontal, 12)
@@ -55,29 +57,38 @@ struct HistoryView: View {
 
     private var toolbar: some View {
         HStack(spacing: 6) {
-            HStack(spacing: 2) {
+            HStack(spacing: 3) {
                 ForEach(Window.allCases) { item in
                     Button {
-                        window = item
+                        withAnimation(.spring(response: 0.25, dampingFraction: 0.85)) {
+                            window = item
+                        }
                     } label: {
                         Text(item.rawValue)
-                            .font(.system(size: 10, weight: window == item ? .semibold : .regular))
-                            .foregroundStyle(window == item ? .primary : .secondary)
-                            .padding(.horizontal, 9)
-                            .padding(.vertical, 3)
-                            .background(
-                                RoundedRectangle(cornerRadius: 5, style: .continuous)
-                                    .fill(window == item ? Color.primary.opacity(0.1) : .clear)
-                            )
+                            .font(.system(size: 10, weight: .semibold, design: .rounded))
+                            .foregroundStyle(window == item ? Color.black.opacity(0.85) : Color.secondary)
+                            .padding(.horizontal, 10)
+                            .padding(.vertical, 4)
+                            .background {
+                                if window == item {
+                                    Capsule()
+                                        .fill(Theme.accentGradient)
+                                        .shadow(color: Theme.accent.opacity(0.3), radius: 5, y: 1)
+                                }
+                            }
                             .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }
             }
-            .padding(2)
+            .padding(3)
             .background(
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(Color.primary.opacity(0.045))
+                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .fill(Theme.surfaceSunken)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .strokeBorder(Theme.stroke, lineWidth: 0.8)
+                    )
             )
 
             Spacer()
@@ -93,28 +104,30 @@ struct HistoryView: View {
     }
 
     private var containersCard: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 7) {
             SectionTitle(text: "Container usage", trailing: window.rawValue)
 
             if summaries.isEmpty {
-                Text("No samples in this window yet. S-Info records one sample every \(Int(store.sampleInterval / 60)) minutes while the panel is refreshing.")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.secondary)
-                    .padding(.vertical, 6)
+                HStack(spacing: 8) {
+                    Image(systemName: "waveform.path.ecg")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Theme.accent.opacity(0.6))
+                    Text("No samples yet. S-Info records one every \(Int(store.sampleInterval / 60)) minutes while it is running.")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                }
+                .padding(.vertical, 5)
             } else {
                 HStack(spacing: 6) {
                     Text("Container")
                         .frame(maxWidth: .infinity, alignment: .leading)
-                    Text("CPU")
-                        .frame(width: 44, alignment: .trailing)
-                    Text("PEAK")
-                        .frame(width: 44, alignment: .trailing)
-                    Text("MEM")
-                        .frame(width: 56, alignment: .trailing)
-                    Text("UP")
-                        .frame(width: 34, alignment: .trailing)
+                    Text("CPU").frame(width: 44, alignment: .trailing)
+                    Text("PEAK").frame(width: 44, alignment: .trailing)
+                    Text("MEM").frame(width: 58, alignment: .trailing)
+                    Text("UP").frame(width: 34, alignment: .trailing)
                 }
-                .font(.system(size: 8, weight: .semibold))
+                .font(.system(size: 8, weight: .bold, design: .rounded))
+                .tracking(0.4)
                 .foregroundStyle(.tertiary)
                 .padding(.horizontal, 4)
 
@@ -125,7 +138,7 @@ struct HistoryView: View {
                 }
             }
         }
-        .cardStyle(padding: 10)
+        .cardStyle(padding: 11)
     }
 
     private func summaryRow(_ summary: ContainerSummary) -> some View {
@@ -139,10 +152,10 @@ struct HistoryView: View {
                 toggle(summary.name)
             } label: {
                 HStack(spacing: 6) {
-                    HStack(spacing: 4) {
+                    HStack(spacing: 5) {
                         Image(systemName: isOpen ? "chevron.down" : "chevron.right")
                             .font(.system(size: 7, weight: .bold))
-                            .foregroundStyle(.quaternary)
+                            .foregroundStyle(isOpen ? Theme.accent : Color.primary.opacity(0.25))
                             .frame(width: 8)
                         Text(displayName(summary.name))
                             .font(.system(size: 10.5, weight: .medium))
@@ -150,7 +163,7 @@ struct HistoryView: View {
                         Spacer(minLength: 0)
                     }
                     Text(Fmt.percent(summary.avgCPU))
-                        .font(.system(size: 9.5, design: .monospaced))
+                        .font(.system(size: 9.5, weight: .semibold, design: .monospaced))
                         .foregroundStyle(cpuColor(summary.avgCPU))
                         .frame(width: 44, alignment: .trailing)
                     Text(Fmt.percent(summary.peakCPU))
@@ -160,18 +173,25 @@ struct HistoryView: View {
                     Text(Fmt.bytes(summary.avgMem))
                         .font(.system(size: 9.5, design: .monospaced))
                         .foregroundStyle(.secondary)
-                        .frame(width: 56, alignment: .trailing)
-                    Text(Fmt.percent(runFraction * 100))
-                        .font(.system(size: 9.5, design: .monospaced))
-                        .foregroundStyle(runFraction > 0.99 ? Theme.green : Theme.amber)
-                        .frame(width: 34, alignment: .trailing)
+                        .frame(width: 58, alignment: .trailing)
+                    HStack(spacing: 2) {
+                        if runFraction < 0.99 {
+                            Circle()
+                                .fill(Theme.amber)
+                                .frame(width: 4, height: 4)
+                        }
+                        Text(Fmt.percent(runFraction * 100))
+                            .font(.system(size: 9.5, design: .monospaced))
+                            .foregroundStyle(runFraction > 0.99 ? Theme.green : Theme.amber)
+                    }
+                    .frame(width: 34, alignment: .trailing)
                 }
                 .padding(.horizontal, 4)
-                .padding(.vertical, 5)
+                .padding(.vertical, 5.5)
                 .contentShape(Rectangle())
                 .background(
-                    RoundedRectangle(cornerRadius: 5, style: .continuous)
-                        .fill(isOpen ? Color.primary.opacity(0.04) : .clear)
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .fill(isOpen ? Theme.surfaceHigh : .clear)
                 )
             }
             .buttonStyle(.plain)
@@ -196,14 +216,14 @@ struct HistoryView: View {
                     .foregroundStyle(.tertiary)
             }
             .frame(maxWidth: .infinity, alignment: .leading)
-            .frame(height: 36)
+            .frame(height: 38)
         } else {
-            HStack(spacing: 10) {
+            HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("CPU")
-                        .font(.system(size: 8, weight: .semibold))
+                        .font(.system(size: 8, weight: .bold, design: .rounded))
                         .foregroundStyle(.tertiary)
-                    Sparkline(values: points.map(\.cpu), color: Theme.accent)
+                    Sparkline(values: points.map(\.cpu), color: Theme.accentText)
                         .frame(height: 28)
                     Text("\(points.count) samples · \(Fmt.shortDate(points.first?.ts)) → \(Fmt.shortDate(points.last?.ts))")
                         .font(.system(size: 7.5, design: .monospaced))
@@ -212,40 +232,48 @@ struct HistoryView: View {
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text("MEMORY")
-                        .font(.system(size: 8, weight: .semibold))
+                        .font(.system(size: 8, weight: .bold, design: .rounded))
                         .foregroundStyle(.tertiary)
-                    Sparkline(values: points.map { Double($0.memUsed) }, color: Theme.blue, zeroBased: false)
+                    Sparkline(values: points.map { Double($0.memUsed) }, color: Theme.violetText, zeroBased: false)
                         .frame(height: 28)
                     Text("peak \(Fmt.bytes(points.map(\.memUsed).max() ?? 0))")
                         .font(.system(size: 7.5, design: .monospaced))
                         .foregroundStyle(.quaternary)
                 }
             }
+            .padding(7)
+            .background(
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(Theme.surfaceSunken)
+            )
         }
     }
 
     private var eventsCard: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: 7) {
             SectionTitle(text: "State changes", trailing: "\(events.count)")
 
             if events.isEmpty {
                 Text("No start, stop, restart or health changes recorded in this window.")
                     .font(.system(size: 10))
                     .foregroundStyle(.secondary)
-                    .padding(.vertical, 4)
+                    .padding(.vertical, 3)
             } else {
                 VStack(spacing: 0) {
                     ForEach(events.prefix(80)) { event in
-                        HStack(alignment: .top, spacing: 6) {
-                            Image(systemName: eventIcon(event.kind))
-                                .font(.system(size: 8, weight: .semibold))
-                                .foregroundStyle(eventColor(event.kind))
-                                .frame(width: 12)
-                                .padding(.top, 1)
+                        HStack(alignment: .top, spacing: 7) {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                    .fill(eventColor(event.kind).opacity(0.12))
+                                    .frame(width: 18, height: 18)
+                                Image(systemName: eventIcon(event.kind))
+                                    .font(.system(size: 7.5, weight: .bold))
+                                    .foregroundStyle(eventColor(event.kind))
+                            }
                             VStack(alignment: .leading, spacing: 1) {
                                 HStack(spacing: 4) {
                                     Text(displayName(event.name))
-                                        .font(.system(size: 10, weight: .medium))
+                                        .font(.system(size: 10, weight: .semibold))
                                         .lineLimit(1)
                                     Text(event.kind)
                                         .font(.system(size: 8))
@@ -261,39 +289,44 @@ struct HistoryView: View {
                                     .lineLimit(2)
                             }
                         }
-                        .padding(.vertical, 3)
-                        .padding(.horizontal, 4)
+                        .padding(.vertical, 3.5)
                         if event.id != events.prefix(80).last?.id {
-                            Divider().opacity(0.25)
+                            Divider().opacity(0.2).padding(.leading, 25)
                         }
                     }
                 }
             }
         }
-        .cardStyle(padding: 10)
+        .cardStyle(padding: 11)
     }
 
     private var retentionCard: some View {
-        HStack(alignment: .top, spacing: 8) {
-            Image(systemName: "clock.arrow.circlepath")
-                .font(.system(size: 12))
-                .foregroundStyle(Theme.accent)
+        HStack(alignment: .top, spacing: 9) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                    .fill(Theme.violetGradient)
+                    .opacity(0.16)
+                    .frame(width: 30, height: 30)
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(Theme.violetText)
+            }
             VStack(alignment: .leading, spacing: 2) {
                 Text("30-day retention")
                     .font(.system(size: 10.5, weight: .semibold))
-                Text("Samples, state changes and upgrade logs older than 30 days are deleted automatically. History lives on this Mac in ~/Library/Application Support/S-Info/history.sqlite, not on the server.")
+                Text("Samples, state changes and activity logs older than 30 days are deleted automatically. Everything is local, in ~/Library/Application Support/S-Info/history.sqlite.")
                     .font(.system(size: 9))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
                 if let stats = store.historyStats {
                     Text("\(stats.samples) samples · \(stats.events) events · \(Fmt.bytes(stats.bytes)) · oldest \(Fmt.relative(stats.oldest))")
-                        .font(.system(size: 8.5, design: .monospaced))
+                        .font(.system(size: 8.3, design: .monospaced))
                         .foregroundStyle(.tertiary)
                         .padding(.top, 1)
                 }
             }
         }
-        .cardStyle(padding: 10)
+        .cardStyle(padding: 11)
     }
 
     private func load() async {
@@ -310,11 +343,13 @@ struct HistoryView: View {
     }
 
     private func toggle(_ name: String) {
-        if expanded.contains(name) {
-            expanded.remove(name)
-            return
+        withAnimation(.easeOut(duration: 0.16)) {
+            if expanded.contains(name) {
+                expanded.remove(name)
+                return
+            }
+            expanded.insert(name)
         }
-        expanded.insert(name)
         guard series[name] == nil else { return }
         Task {
             series[name] = await store.series(
@@ -324,8 +359,6 @@ struct HistoryView: View {
         }
     }
 
-    /// History is keyed by container name (stable across restarts), but the
-    /// compose service name is what the Containers tab shows.
     private func displayName(_ name: String) -> String {
         store.probe?.containers.first { $0.name == name }?.displayName ?? name
     }
@@ -346,7 +379,7 @@ struct HistoryView: View {
         case "stopped": return Theme.gray
         case "restart": return Theme.amber
         case "health": return Theme.red
-        default: return Theme.blue
+        default: return Theme.accentDeep
         }
     }
 }

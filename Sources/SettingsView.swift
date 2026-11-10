@@ -14,6 +14,29 @@ struct SettingsView: View {
     @AppStorage("sinfo.autoUpgrade") private var autoUpgrade = true
     @AppStorage("sinfo.checkUpdates") private var checkUpdates = true
     @AppStorage("sinfo.barBadge") private var barBadge = false
+    @AppStorage("sinfo.appearance") private var appearance = "system"
+
+    @AppStorage("sinfo.showHistoryTab") private var showHistoryTab = true
+    @AppStorage("sinfo.showUpdatesTab") private var showUpdatesTab = true
+    @AppStorage("sinfo.showStatusPill") private var showStatusPill = true
+    @AppStorage("sinfo.showHost") private var showHost = true
+    @AppStorage("sinfo.showFooter") private var showFooter = true
+    @AppStorage("sinfo.showMenuDot") private var showMenuDot = true
+    @AppStorage("sinfo.showRowImage") private var showRowImage = true
+    @AppStorage("sinfo.showRowUptime") private var showRowUptime = true
+    @AppStorage("sinfo.showRowPorts") private var showRowPorts = true
+    @AppStorage("sinfo.showRowHealth") private var showRowHealth = true
+    @AppStorage("sinfo.showRowRestarts") private var showRowRestarts = true
+    @AppStorage("sinfo.showRowCPU") private var showRowCPU = true
+    @AppStorage("sinfo.showRowMemory") private var showRowMemory = true
+    @AppStorage("sinfo.showRowStackCounts") private var showRowStackCounts = true
+    @AppStorage("sinfo.showDetailMetrics") private var showDetailMetrics = true
+    @AppStorage("sinfo.showDetailCharts") private var showDetailCharts = true
+    @AppStorage("sinfo.showDetailInspect") private var showDetailInspect = true
+    @AppStorage("sinfo.showHistoryEvents") private var showHistoryEvents = true
+    @AppStorage("sinfo.showPendingPackages") private var showPendingPackages = true
+    @AppStorage("sinfo.showActivityLog") private var showActivityLog = true
+    @AppStorage("sinfo.showCacheAction") private var showCacheAction = true
 
     @State private var loginItem = LoginItem.enabled
     @State private var testing = false
@@ -22,36 +45,164 @@ struct SettingsView: View {
     @State private var pruneMessage: String?
 
     var body: some View {
-        VStack(spacing: 0) {
-            HStack {
-                Text("S-Info settings")
-                    .font(.system(size: 14, weight: .bold))
-                Spacer()
-                Button("Done") {
-                    store.applySettings()
-                    dismiss()
-                }
-                .keyboardShortcut(.defaultAction)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 12)
+        ZStack {
+            AppBackground()
 
-            Divider()
-
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
-                    connectionCard
-                    refreshCard
-                    historyCard
-                    maintenanceCard
-                    generalCard
-                    aboutCard
+            VStack(spacing: 0) {
+                header
+                ScrollView(showsIndicators: false) {
+                    VStack(alignment: .leading, spacing: 11) {
+                        appearanceCard
+                        visibilityCard
+                        connectionCard
+                        refreshCard
+                        historyCard
+                        maintenanceCard
+                        generalCard
+                        aboutCard
+                    }
+                    .padding(14)
                 }
-                .padding(14)
             }
         }
         .frame(width: 470, height: 620)
+        .onChange(of: appearance) { _, value in AppearanceMode.apply(value) }
         .onDisappear { store.applySettings() }
+    }
+
+    private var header: some View {
+        HStack(spacing: 10) {
+            if let icon = AppAssets.appIcon {
+                Image(nsImage: icon)
+                    .resizable()
+                    .frame(width: 28, height: 28)
+                    .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
+            }
+            VStack(alignment: .leading, spacing: 1) {
+                Text("Settings")
+                    .font(.system(size: 15, weight: .heavy, design: .rounded))
+                Text("S-Info · \(SSHConfig.current().label)")
+                    .font(.system(size: 9.5))
+                    .foregroundStyle(.secondary)
+            }
+            Spacer()
+            Button("Done") {
+                store.applySettings()
+                dismiss()
+            }
+            .keyboardShortcut(.defaultAction)
+            .buttonStyle(.borderedProminent)
+            .tint(Theme.accentText)
+            .controlSize(.small)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+    }
+
+    // MARK: Appearance & visibility
+
+    private var appearanceCard: some View {
+        settingsCard(title: "Appearance", icon: "paintpalette.fill") {
+            HStack {
+                Text("Theme")
+                    .font(.system(size: 10.5))
+                    .foregroundStyle(.secondary)
+                Spacer()
+                Picker("", selection: $appearance) {
+                    ForEach(AppearanceMode.allCases) { mode in
+                        Text(mode.label).tag(mode.rawValue)
+                    }
+                }
+                .pickerStyle(.segmented)
+                .labelsHidden()
+                .frame(width: 190)
+            }
+            Text("System follows macOS. The palette, charts and glows adapt to light and dark.")
+                .font(.system(size: 8.5))
+                .foregroundStyle(.tertiary)
+        }
+    }
+
+    private var visibilityCard: some View {
+        settingsCard(title: "What is visible", icon: "eye.fill") {
+            subLabel("Panel")
+            chipGrid([
+                ("Status pill", $showStatusPill),
+                ("Hostname", $showHost),
+                ("Footer", $showFooter),
+                ("Menu bar dot", $showMenuDot),
+                ("Menu bar count", $barBadge),
+            ])
+
+            subLabel("Tabs")
+            chipGrid([
+                ("History", $showHistoryTab),
+                ("Updates", $showUpdatesTab),
+            ])
+
+            subLabel("Container rows")
+            chipGrid([
+                ("Image", $showRowImage),
+                ("Uptime", $showRowUptime),
+                ("Ports", $showRowPorts),
+                ("Health", $showRowHealth),
+                ("Restarts", $showRowRestarts),
+                ("CPU", $showRowCPU),
+                ("Memory", $showRowMemory),
+                ("Stack counts", $showRowStackCounts),
+            ])
+
+            subLabel("Detail, history and updates")
+            chipGrid([
+                ("Metrics", $showDetailMetrics),
+                ("Charts", $showDetailCharts),
+                ("Mounts & logs", $showDetailInspect),
+                ("State events", $showHistoryEvents),
+                ("Pending packages", $showPendingPackages),
+                ("Activity log", $showActivityLog),
+                ("RAM cache action", $showCacheAction),
+            ])
+
+            HStack {
+                Button("Show everything") { resetVisibility() }
+                    .controlSize(.small)
+                Spacer()
+                Text("Hidden items stay in the data; only the UI changes.")
+                    .font(.system(size: 8.5))
+                    .foregroundStyle(.tertiary)
+            }
+        }
+    }
+
+    private func subLabel(_ text: String) -> some View {
+        Text(text.uppercased())
+            .font(.system(size: 8, weight: .bold, design: .rounded))
+            .tracking(0.6)
+            .foregroundStyle(.tertiary)
+            .padding(.top, 2)
+    }
+
+    private func chipGrid(_ items: [(String, Binding<Bool>)]) -> some View {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 5) {
+            ForEach(Array(items.enumerated()), id: \.offset) { _, item in
+                VisibilityChip(label: item.0, isOn: item.1)
+            }
+        }
+    }
+
+    private func resetVisibility() {
+        let keys = [
+            "sinfo.showHistoryTab", "sinfo.showUpdatesTab", "sinfo.showStatusPill",
+            "sinfo.showHost", "sinfo.showFooter", "sinfo.showMenuDot",
+            "sinfo.showRowImage", "sinfo.showRowUptime", "sinfo.showRowPorts",
+            "sinfo.showRowHealth", "sinfo.showRowRestarts", "sinfo.showRowCPU",
+            "sinfo.showRowMemory", "sinfo.showRowStackCounts",
+            "sinfo.showDetailMetrics", "sinfo.showDetailCharts", "sinfo.showDetailInspect",
+            "sinfo.showHistoryEvents", "sinfo.showPendingPackages",
+            "sinfo.showActivityLog", "sinfo.showCacheAction",
+        ]
+        for key in keys { UserDefaults.standard.set(true, forKey: key) }
+        barBadge = false
     }
 
     // MARK: Connection
@@ -90,6 +241,8 @@ struct SettingsView: View {
                             .font(.system(size: 10))
                     }
                 }
+                .buttonStyle(.bordered)
+                .tint(Theme.accentText)
                 .controlSize(.small)
                 .disabled(testing)
 
@@ -171,7 +324,7 @@ struct SettingsView: View {
     // MARK: Maintenance
 
     private var maintenanceCard: some View {
-        settingsCard(title: "Maintenance", icon: "shippingbox") {
+        settingsCard(title: "Maintenance", icon: "shippingbox.fill") {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Upgrade every 30 days")
@@ -184,7 +337,7 @@ struct SettingsView: View {
                 Spacer(minLength: 8)
                 Toggle("", isOn: $autoUpgrade)
                     .toggleStyle(.switch)
-                    .tint(Theme.accent)
+                    .tint(Theme.accentText)
                     .controlSize(.mini)
                     .labelsHidden()
             }
@@ -196,16 +349,17 @@ struct SettingsView: View {
                 Text(store.nextUpgrade.map { Fmt.dateTime($0) } ?? "—")
                     .font(.system(size: 10, design: .monospaced))
             }
-            Text("No dist-upgrade, no autoremove and no reboot are ever issued.")
+            Text("The RAM cache action uses sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches'. No dist-upgrade, no autoremove and no reboot are ever issued.")
                 .font(.system(size: 8.5))
                 .foregroundStyle(.tertiary)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 
     // MARK: General
 
     private var generalCard: some View {
-        settingsCard(title: "General", icon: "gearshape") {
+        settingsCard(title: "General", icon: "gearshape.fill") {
             toggleRow(
                 "Launch at login",
                 isOn: Binding(
@@ -218,13 +372,12 @@ struct SettingsView: View {
                 ),
                 note: "A LaunchAgent in ~/Library/LaunchAgents."
             )
-            toggleRow("Badge count in menu bar", isOn: $barBadge, note: "Shows unhealthy + stopped containers next to the icon.")
             toggleRow("Check GitHub for updates", isOn: $checkUpdates, note: "Once at launch, read-only.")
         }
     }
 
     private var aboutCard: some View {
-        settingsCard(title: "About", icon: "info.circle") {
+        settingsCard(title: "About", icon: "info.circle.fill") {
             HStack {
                 Text("Version")
                     .font(.system(size: 10.5))
@@ -268,13 +421,13 @@ struct SettingsView: View {
         @ViewBuilder content: () -> Content
     ) -> some View {
         VStack(alignment: .leading, spacing: 7) {
-            HStack(spacing: 5) {
+            HStack(spacing: 6) {
                 Image(systemName: icon)
                     .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(.tertiary)
+                    .foregroundStyle(Theme.accentText.opacity(0.9))
                 Text(title.uppercased())
-                    .font(.system(size: 9, weight: .semibold))
-                    .tracking(0.6)
+                    .font(.system(size: 9, weight: .bold, design: .rounded))
+                    .tracking(0.7)
                     .foregroundStyle(.tertiary)
             }
             content()
@@ -334,9 +487,41 @@ struct SettingsView: View {
             Spacer(minLength: 8)
             Toggle("", isOn: isOn)
                 .toggleStyle(.switch)
-                .tint(Theme.accent)
+                .tint(Theme.accentText)
                 .controlSize(.mini)
                 .labelsHidden()
         }
+    }
+}
+
+struct VisibilityChip: View {
+    var label: String
+    @Binding var isOn: Bool
+
+    var body: some View {
+        Button {
+            isOn.toggle()
+        } label: {
+            HStack(spacing: 4) {
+                Image(systemName: isOn ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 9, weight: .semibold))
+                Text(label)
+                    .font(.system(size: 9.5, weight: .medium))
+                    .lineLimit(1)
+                Spacer(minLength: 0)
+            }
+            .foregroundStyle(isOn ? Theme.accentText : Color.secondary)
+            .padding(.horizontal, 7)
+            .padding(.vertical, 4.5)
+            .background(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(isOn ? Theme.accent.opacity(0.10) : Theme.surfaceSunken)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .strokeBorder(isOn ? Theme.accent.opacity(0.25) : Theme.stroke, lineWidth: 0.8)
+            )
+        }
+        .buttonStyle(.plain)
     }
 }

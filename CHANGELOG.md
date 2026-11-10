@@ -4,6 +4,42 @@ All notable changes to S-Info. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases use
 [Semantic Versioning](https://semver.org/).
 
+## [1.1.0] — 2026-11-10
+
+### Added
+
+- A themed interface with a gradient canvas, subtle grid, glass cards, glow
+  accents, animated tab selection and redesigned metric tiles and charts.
+- Appearance setting: follow macOS (default), or force Light or Dark. The whole
+  palette, including chart and status colours, adapts to both.
+- Settings → **What is visible**: toggle the status pill, hostname, footer, menu
+  bar dot and count, the History and Updates tabs, each container-row field
+  (image, uptime, ports, health, restarts, CPU, memory, stack counts), detail
+  metrics/charts/mounts, history events, pending packages, activity log and the
+  cache action. Toggles are instant, remembered, and have a "Show everything"
+  reset.
+- **RAM cache** action: `sync` then
+  `sudo -n sh -c 'echo 3 > /proc/sys/vm/drop_caches'`, with a confirmation, last
+  cleared time and a logged result.
+- `--clear-cache` headless command.
+- The app icon is now the same two-unit rack as the menu bar glyph, drawn from a
+  single shape in `Resources/icon.swift`.
+
+### Changed
+
+- The activity log now labels package runs and cache runs separately, and the
+  pending-package list and logs sit in the new card style.
+- Settings is reorganised around appearance, visibility and connection, with
+  compact visibility chips.
+- Container rows, the detail hero, history timeline and update countdown ring
+  were rebuilt for the new theme.
+
+### Fixed
+
+- Light-mode contrast for CPU, memory, status and chart colours.
+- The settings snapshot no longer forces the system appearance over the
+  requested one.
+
 ## [1.0.3] — 2026-11-10
 
 ### Fixed

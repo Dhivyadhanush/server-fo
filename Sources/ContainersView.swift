@@ -9,12 +9,30 @@ struct ContainersView: View {
     @State private var selected: String?
     @State private var hovered: String?
 
+    @AppStorage("sinfo.showRowImage") private var showImage = true
+    @AppStorage("sinfo.showRowUptime") private var showUptime = true
+    @AppStorage("sinfo.showRowPorts") private var showPorts = true
+    @AppStorage("sinfo.showRowHealth") private var showHealth = true
+    @AppStorage("sinfo.showRowRestarts") private var showRestarts = true
+    @AppStorage("sinfo.showRowCPU") private var showCPU = true
+    @AppStorage("sinfo.showRowMemory") private var showMemory = true
+    @AppStorage("sinfo.showRowStackCounts") private var showStackCounts = true
+
     enum SortMode: String, CaseIterable, Identifiable {
         case cpu = "CPU"
         case memory = "Memory"
         case name = "Name"
         case restarts = "Restarts"
         var id: String { rawValue }
+
+        var icon: String {
+            switch self {
+            case .cpu: return "cpu"
+            case .memory: return "memorychip"
+            case .name: return "textformat.abc"
+            case .restarts: return "arrow.clockwise"
+            }
+        }
     }
 
     var body: some View {
@@ -35,10 +53,10 @@ struct ContainersView: View {
             if store.probe == nil {
                 emptyState
             } else if filtered.isEmpty {
-                VStack(spacing: 6) {
+                VStack(spacing: 8) {
                     Image(systemName: "line.3.horizontal.decrease.circle")
-                        .font(.system(size: 22))
-                        .foregroundStyle(.tertiary)
+                        .font(.system(size: 24, weight: .light))
+                        .foregroundStyle(Theme.accentText.opacity(0.7))
                     Text(query.isEmpty ? "No containers" : "No containers match “\(query)”")
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
@@ -55,10 +73,10 @@ struct ContainersView: View {
 
     private var toolbar: some View {
         HStack(spacing: 8) {
-            HStack(spacing: 5) {
+            HStack(spacing: 6) {
                 Image(systemName: "magnifyingglass")
-                    .font(.system(size: 10, weight: .medium))
-                    .foregroundStyle(.tertiary)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(Theme.accentText.opacity(0.85))
                 TextField("Filter containers", text: $query)
                     .textFieldStyle(.plain)
                     .font(.system(size: 11))
@@ -73,38 +91,46 @@ struct ContainersView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 5)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 6)
             .background(
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(Color.primary.opacity(0.05))
+                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .fill(Theme.surfaceSunken)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .strokeBorder(Theme.stroke, lineWidth: 0.8)
+                    )
             )
 
             Menu {
                 ForEach(SortMode.allCases) { mode in
                     Button {
-                        sort = mode
+                        withAnimation(.easeOut(duration: 0.18)) { sort = mode }
                     } label: {
                         if sort == mode {
                             Label(mode.rawValue, systemImage: "checkmark")
                         } else {
-                            Text(mode.rawValue)
+                            Label(mode.rawValue, systemImage: mode.icon)
                         }
                     }
                 }
             } label: {
-                HStack(spacing: 3) {
-                    Image(systemName: "arrow.up.arrow.down")
+                HStack(spacing: 4) {
+                    Image(systemName: sort.icon)
                         .font(.system(size: 9, weight: .semibold))
                     Text(sort.rawValue)
-                        .font(.system(size: 10))
+                        .font(.system(size: 10, weight: .medium))
                 }
                 .foregroundStyle(.secondary)
-                .padding(.horizontal, 7)
-                .padding(.vertical, 5)
+                .padding(.horizontal, 8)
+                .padding(.vertical, 6)
                 .background(
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(Color.primary.opacity(0.05))
+                    RoundedRectangle(cornerRadius: 9, style: .continuous)
+                        .fill(Theme.surfaceSunken)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                                .strokeBorder(Theme.stroke, lineWidth: 0.8)
+                        )
                 )
             }
             .menuStyle(.borderlessButton)
@@ -114,34 +140,36 @@ struct ContainersView: View {
     }
 
     private var scroll: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 12) {
+        ScrollView(showsIndicators: false) {
+            LazyVStack(alignment: .leading, spacing: 13) {
                 ForEach(groups, id: \.name) { group in
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 6) {
+                            Image(systemName: "shippingbox.fill")
+                                .font(.system(size: 8))
+                                .foregroundStyle(Theme.accentText.opacity(0.8))
                             Text(group.name.uppercased())
-                                .font(.system(size: 9, weight: .semibold))
-                                .tracking(0.7)
+                                .font(.system(size: 9, weight: .bold, design: .rounded))
+                                .tracking(0.9)
                                 .foregroundStyle(.tertiary)
                                 .lineLimit(1)
                             Spacer()
-                            Text("\(group.containers.filter(\.isRunning).count)/\(group.containers.count)")
-                                .font(.system(size: 8.5, design: .monospaced))
-                                .foregroundStyle(.quaternary)
+                            if showStackCounts {
+                                Text("\(group.containers.filter(\.isRunning).count)/\(group.containers.count)")
+                                    .font(.system(size: 8.5, weight: .semibold, design: .monospaced))
+                                    .foregroundStyle(.tertiary)
+                                    .padding(.horizontal, 5)
+                                    .padding(.vertical, 1)
+                                    .background(Capsule().fill(Theme.surfaceSunken))
+                            }
                         }
-                        .padding(.horizontal, 8)
-                        .padding(.bottom, 2)
+                        .padding(.horizontal, 3)
 
-                        VStack(spacing: 1) {
+                        VStack(spacing: 3) {
                             ForEach(group.containers) { container in
                                 row(container)
                             }
                         }
-                        .padding(3)
-                        .background(
-                            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                .fill(Color.primary.opacity(0.035))
-                        )
                     }
                 }
             }
@@ -150,82 +178,112 @@ struct ContainersView: View {
     }
 
     private func row(_ container: Container) -> some View {
-        Button {
+        let active = hovered == container.name
+
+        return Button {
             selected = container.name
         } label: {
-            HStack(spacing: 8) {
-                StatusDot(
-                    color: container.isRunning
-                        ? (container.healthState == .unhealthy ? Theme.red : Theme.green)
-                        : Theme.gray.opacity(0.5),
-                    size: 6,
-                    glow: container.isRunning
-                )
+            HStack(spacing: 9) {
+                ZStack {
+                    if container.isRunning {
+                        Circle()
+                            .fill((container.healthState == .unhealthy ? Theme.red : Theme.green).opacity(0.16))
+                            .frame(width: 18, height: 18)
+                    }
+                    StatusDot(
+                        color: container.isRunning
+                            ? (container.healthState == .unhealthy ? Theme.red : Theme.green)
+                            : Theme.gray.opacity(0.55),
+                        size: 7,
+                        glow: container.isRunning
+                    )
+                }
+                .frame(width: 18)
 
-                VStack(alignment: .leading, spacing: 2) {
-                    HStack(spacing: 4) {
+                VStack(alignment: .leading, spacing: 2.5) {
+                    HStack(spacing: 5) {
                         Text(container.displayName)
-                            .font(.system(size: 11.5, weight: .semibold))
+                            .font(.system(size: 11.8, weight: .semibold))
                             .foregroundStyle(container.isRunning ? .primary : .secondary)
                             .lineLimit(1)
 
                         if !container.isRunning {
                             Pill(text: "stopped", color: Theme.gray)
-                        } else if container.healthState == .unhealthy {
+                        } else if container.healthState == .unhealthy, showHealth {
                             Pill(text: "unhealthy", color: Theme.red)
-                        } else if container.healthState == .starting {
+                        } else if container.healthState == .starting, showHealth {
                             Pill(text: "starting", color: Theme.amber)
                         }
-                        if container.restarts > 0 {
-                            HStack(spacing: 1) {
+
+                        if showRestarts, container.restarts > 0 {
+                            HStack(spacing: 1.5) {
                                 Image(systemName: "arrow.clockwise")
                                     .font(.system(size: 7, weight: .bold))
                                 Text("\(container.restarts)")
-                                    .font(.system(size: 8, weight: .semibold, design: .monospaced))
+                                    .font(.system(size: 8, weight: .bold, design: .monospaced))
                             }
                             .foregroundStyle(container.restarts > 2 ? Theme.amber : Theme.subtle)
                         }
                     }
 
-                    HStack(spacing: 4) {
-                        Text(container.imageShort)
-                            .lineLimit(1)
-                        if !container.uptime.isEmpty {
-                            Text("·")
-                            Text(container.uptime)
+                    if showImage || showUptime || showPorts {
+                        HStack(spacing: 4) {
+                            if showImage {
+                                Text(container.imageShort)
+                                    .lineLimit(1)
+                            }
+                            if showUptime, !container.uptime.isEmpty {
+                                if showImage { Text("·") }
+                                Text(container.uptime)
+                            }
+                            if showPorts, !container.shortPorts.isEmpty {
+                                if showImage || showUptime { Text("·") }
+                                Text(container.shortPorts)
+                                    .lineLimit(1)
+                            }
                         }
-                        if !container.shortPorts.isEmpty {
-                            Text("· \(container.shortPorts)")
-                                .lineLimit(1)
-                        }
+                        .font(.system(size: 8.8, design: .monospaced))
+                        .foregroundStyle(.tertiary)
                     }
-                    .font(.system(size: 8.8, design: .monospaced))
-                    .foregroundStyle(.tertiary)
                 }
 
                 Spacer(minLength: 4)
 
-                VStack(alignment: .trailing, spacing: 2) {
-                    Text(container.isRunning ? Fmt.percent(container.cpu) : "—")
-                        .font(.system(size: 10.5, weight: .semibold, design: .monospaced))
-                        .foregroundStyle(container.isRunning ? cpuColor(container.cpu) : Theme.subtle)
-                    Text(container.isRunning ? Fmt.bytes(container.memUsed) : "—")
-                        .font(.system(size: 9, design: .monospaced))
-                        .foregroundStyle(.secondary)
+                if showCPU || showMemory {
+                    VStack(alignment: .trailing, spacing: 2.5) {
+                        if showCPU {
+                            Text(container.isRunning ? Fmt.percent(container.cpu) : "—")
+                                .font(.system(size: 10.5, weight: .bold, design: .monospaced))
+                                .foregroundStyle(container.isRunning ? cpuColor(container.cpu) : Theme.gray)
+                        }
+                        if showMemory {
+                            Text(container.isRunning ? Fmt.bytes(container.memUsed) : "—")
+                                .font(.system(size: 9, design: .monospaced))
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .frame(width: 58, alignment: .trailing)
                 }
-                .frame(width: 58, alignment: .trailing)
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 7.5, weight: .semibold))
-                    .foregroundStyle(.quaternary)
+                    .font(.system(size: 7.5, weight: .bold))
+                    .foregroundStyle(active ? Theme.accentText : Color.primary.opacity(0.2))
             }
-            .padding(.horizontal, 7)
-            .padding(.vertical, 6)
+            .padding(.horizontal, 9)
+            .padding(.vertical, 7)
             .contentShape(Rectangle())
             .background(
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(hovered == container.name ? Color.primary.opacity(0.055) : .clear)
+                RoundedRectangle(cornerRadius: 9, style: .continuous)
+                    .fill(active ? Theme.surfaceHigh : Theme.surface)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .strokeBorder(
+                                active ? Theme.accent.opacity(0.35) : Theme.stroke,
+                                lineWidth: active ? 1 : 0.8
+                            )
+                    )
             )
+            .shadow(color: .black.opacity(active ? 0.12 : 0), radius: 8, y: 3)
         }
         .buttonStyle(.plain)
         .onHover { inside in
@@ -239,11 +297,16 @@ struct ContainersView: View {
 
     @ViewBuilder
     private var emptyState: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 11) {
             Spacer()
-            Image(systemName: store.connection == .connecting ? "antenna.radiowaves.left.and.right" : "server.rack")
-                .font(.system(size: 26))
-                .foregroundStyle(.tertiary)
+            ZStack {
+                Circle()
+                    .fill(Theme.accent.opacity(0.10))
+                    .frame(width: 64, height: 64)
+                Image(systemName: store.connection == .connecting ? "antenna.radiowaves.left.and.right" : "server.rack")
+                    .font(.system(size: 26, weight: .light))
+                    .foregroundStyle(Theme.accentText.opacity(0.85))
+            }
             switch store.connection {
             case .connecting, .idle:
                 Text("Contacting \(SSHConfig.current().label)…")
@@ -260,6 +323,8 @@ struct ContainersView: View {
                     .frame(maxWidth: 320)
                 Button("Try again") { store.refresh() }
                     .controlSize(.small)
+                    .buttonStyle(.borderedProminent)
+                    .tint(Theme.accentText)
             case .online:
                 Text("No containers reported.")
                     .font(.system(size: 11))
@@ -288,8 +353,6 @@ struct ContainersView: View {
         var result = grouped.map { name, items -> (name: String, containers: [Container]) in
             (name, items.sorted(by: comparator))
         }
-        // Stacks keep a stable alphabetical order; the sort menu orders the
-        // containers inside each stack.
         result.sort { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
         return result
     }
@@ -302,7 +365,6 @@ struct ContainersView: View {
         case .name: return a.displayName.localizedCaseInsensitiveCompare(b.displayName) == .orderedAscending
         }
     }
-
 }
 
 // MARK: - Container detail
@@ -318,6 +380,10 @@ struct ContainerDetailView: View {
     @State private var loadingDetail = false
     @State private var detailError: String?
 
+    @AppStorage("sinfo.showDetailMetrics") private var showMetrics = true
+    @AppStorage("sinfo.showDetailCharts") private var showCharts = true
+    @AppStorage("sinfo.showDetailInspect") private var showInspect = true
+
     private var container: Container? {
         store.probe?.containers.first { $0.name == name }
     }
@@ -325,14 +391,14 @@ struct ContainerDetailView: View {
     var body: some View {
         VStack(spacing: 0) {
             header
-            Divider().opacity(0.4)
-            ScrollView {
-                VStack(alignment: .leading, spacing: 12) {
+            ScrollView(showsIndicators: false) {
+                VStack(alignment: .leading, spacing: 11) {
                     if let container {
-                        metrics(container)
-                        history(container)
+                        hero(container)
+                        if showMetrics { metrics(container) }
+                        if showCharts { history(container) }
                         information(container)
-                        tools(container)
+                        if showInspect { tools(container) }
                     } else {
                         Text("This container is no longer in the list.")
                             .font(.system(size: 11))
@@ -340,7 +406,7 @@ struct ContainerDetailView: View {
                             .padding(.vertical, 20)
                     }
                 }
-                .padding(14)
+                .padding(13)
             }
         }
         .task(id: name) {
@@ -353,46 +419,76 @@ struct ContainerDetailView: View {
 
     private var header: some View {
         HStack(spacing: 8) {
-            Button(action: onBack) {
-                Image(systemName: "chevron.left")
-                    .font(.system(size: 11, weight: .semibold))
-                    .frame(width: 18, height: 18)
-                    .contentShape(Rectangle())
-            }
-            .buttonStyle(.plain)
-
-            VStack(alignment: .leading, spacing: 1) {
-                Text(container?.displayName ?? name)
-                    .font(.system(size: 13, weight: .bold))
-                    .lineLimit(1)
-                if let container, container.displayName != container.name {
-                    Text(container.name)
-                        .font(.system(size: 8.5, design: .monospaced))
-                        .foregroundStyle(.tertiary)
-                        .lineLimit(1)
-                }
-            }
-
+            GlassIconButton(icon: "chevron.left", help: "Back to containers", action: onBack)
+            Text("Container")
+                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                .foregroundStyle(.tertiary)
+                .tracking(0.6)
             Spacer()
-
             if let container {
                 Pill(
-                    text: container.isRunning ? container.state : "stopped",
+                    text: container.isRunning ? "running" : "stopped",
                     color: container.isRunning ? Theme.green : Theme.gray,
-                    icon: container.isRunning ? "play.fill" : "stop.fill"
+                    icon: container.isRunning ? "play.fill" : "stop.fill",
+                    glass: true
                 )
                 if container.healthState != .none {
                     Pill(
                         text: container.healthState.label,
                         color: container.healthState == .unhealthy ? Theme.red
                             : container.healthState == .starting ? Theme.amber : Theme.green,
-                        icon: "heart.fill"
+                        icon: "heart.fill",
+                        glass: true
                     )
                 }
             }
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 9)
+        .padding(.top, 10)
+        .padding(.bottom, 4)
+    }
+
+    private func hero(_ container: Container) -> some View {
+        HStack(spacing: 11) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Theme.accentGradient)
+                    .opacity(0.16)
+                    .frame(width: 46, height: 46)
+                Image(systemName: "shippingbox.fill")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(Theme.accentText)
+            }
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(container.displayName)
+                    .font(.system(size: 16, weight: .heavy, design: .rounded))
+                    .lineLimit(1)
+                if container.displayName != container.name {
+                    Text(container.name)
+                        .font(.system(size: 8.8, design: .monospaced))
+                        .foregroundStyle(.tertiary)
+                        .lineLimit(1)
+                }
+                Text(container.imageShort)
+                    .font(.system(size: 9.5, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+            }
+
+            Spacer(minLength: 4)
+
+            VStack(alignment: .trailing, spacing: 2) {
+                Text(container.uptime.isEmpty ? "—" : container.uptime)
+                    .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(.secondary)
+                Text(container.stack)
+                    .font(.system(size: 8))
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+            }
+        }
+        .cardStyle(padding: 11)
     }
 
     private func metrics(_ container: Container) -> some View {
@@ -402,7 +498,8 @@ struct ContainerDetailView: View {
                 value: container.isRunning ? Fmt.percent(container.cpu) : "—",
                 detail: "docker stats",
                 color: container.isRunning ? cpuColor(container.cpu) : .secondary,
-                fraction: nil
+                fraction: nil,
+                icon: "cpu"
             )
             MetricTile(
                 label: "Memory",
@@ -411,28 +508,33 @@ struct ContainerDetailView: View {
                     ? "of \(Fmt.bytes(container.memLimit)) · \(Fmt.percent(container.memoryFraction * 100))"
                     : "no limit",
                 color: memoryColor(fraction: container.memoryFraction),
-                fraction: container.memLimit > 0 ? container.memoryFraction : nil
+                fraction: container.memLimit > 0 ? container.memoryFraction : nil,
+                icon: "memorychip"
             )
             MetricTile(
                 label: "PIDs",
                 value: "\(container.pids)",
-                detail: "processes"
+                detail: "processes",
+                icon: "list.number"
             )
             MetricTile(
                 label: "Network",
                 value: Fmt.bytes(container.netRx + container.netTx),
-                detail: "rx \(Fmt.bytes(container.netRx)) · tx \(Fmt.bytes(container.netTx))"
+                detail: "rx \(Fmt.bytes(container.netRx)) · tx \(Fmt.bytes(container.netTx))",
+                icon: "network"
             )
             MetricTile(
                 label: "Block I/O",
                 value: Fmt.bytes(container.blkRead + container.blkWrite),
-                detail: "r \(Fmt.bytes(container.blkRead)) · w \(Fmt.bytes(container.blkWrite))"
+                detail: "r \(Fmt.bytes(container.blkRead)) · w \(Fmt.bytes(container.blkWrite))",
+                icon: "internaldrive"
             )
             MetricTile(
                 label: "Restarts",
                 value: "\(container.restarts)",
                 detail: container.restartPolicy.isEmpty ? "no policy" : container.restartPolicy,
-                color: container.restarts > 2 ? Theme.amber : .primary
+                color: container.restarts > 2 ? Theme.amber : .primary,
+                icon: "arrow.clockwise"
             )
         }
     }
@@ -442,13 +544,13 @@ struct ContainerDetailView: View {
         let cpu = samples.map(\.cpu)
         let memory = samples.map { Double($0.memUsed) }
 
-        VStack(alignment: .leading, spacing: 7) {
+        VStack(alignment: .leading, spacing: 8) {
             SectionTitle(
                 text: "Last 24 hours",
                 trailing: samples.count > 1 ? "\(samples.count) points" : nil
             )
             if samples.count > 1 {
-                HStack(spacing: 10) {
+                HStack(spacing: 12) {
                     VStack(alignment: .leading, spacing: 3) {
                         HStack(spacing: 4) {
                             Text("CPU")
@@ -460,7 +562,7 @@ struct ContainerDetailView: View {
                                 .foregroundStyle(.tertiary)
                         }
                         Sparkline(values: cpu, color: cpuColor(container.cpu))
-                            .frame(height: 30)
+                            .frame(height: 32)
                     }
                     VStack(alignment: .leading, spacing: 3) {
                         HStack(spacing: 4) {
@@ -472,8 +574,8 @@ struct ContainerDetailView: View {
                                 .font(.system(size: 8.5, design: .monospaced))
                                 .foregroundStyle(.tertiary)
                         }
-                        Sparkline(values: memory, color: Theme.blue, zeroBased: false)
-                            .frame(height: 30)
+                        Sparkline(values: memory, color: Theme.violetText, zeroBased: false)
+                            .frame(height: 32)
                     }
                 }
             } else {
@@ -482,13 +584,13 @@ struct ContainerDetailView: View {
                     .foregroundStyle(.tertiary)
             }
         }
-        .cardStyle(padding: 10)
+        .cardStyle(padding: 11)
     }
 
     private func information(_ container: Container) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             SectionTitle(text: "Details")
-            KeyValueRow(key: "Image", value: container.image, mono: true)
+            KeyValueRow(key: "State", value: container.state)
             KeyValueRow(key: "Command", value: container.command, mono: true)
             KeyValueRow(key: "Created", value: container.created)
             KeyValueRow(key: "Started", value: Fmt.dockerTime(container.startedAt))
@@ -503,7 +605,7 @@ struct ContainerDetailView: View {
                 value: "\(container.restartPolicy.isEmpty ? "no" : container.restartPolicy) · \(container.restarts) restart\(container.restarts == 1 ? "" : "s")"
             )
         }
-        .cardStyle(padding: 10)
+        .cardStyle(padding: 11)
     }
 
     private func tools(_ container: Container) -> some View {
@@ -514,17 +616,18 @@ struct ContainerDetailView: View {
                 Button {
                     fetchDetail(container)
                 } label: {
-                    HStack(spacing: 3) {
+                    HStack(spacing: 4) {
                         if loadingDetail {
                             ProgressView().controlSize(.mini)
                         } else {
-                            Image(systemName: "terminal").font(.system(size: 9))
+                            Image(systemName: "terminal.fill").font(.system(size: 9))
                         }
                         Text(loadingDetail ? "Fetching…" : "Mounts & logs")
-                            .font(.system(size: 10, weight: .medium))
+                            .font(.system(size: 10, weight: .semibold))
                     }
                 }
-                .buttonStyle(.bordered)
+                .buttonStyle(.borderedProminent)
+                .tint(Theme.accentText)
                 .controlSize(.mini)
                 .disabled(loadingDetail)
             }
@@ -539,8 +642,8 @@ struct ContainerDetailView: View {
             if !mounts.isEmpty {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("MOUNTS")
-                        .font(.system(size: 8, weight: .semibold))
-                        .tracking(0.6)
+                        .font(.system(size: 8, weight: .bold, design: .rounded))
+                        .tracking(0.7)
                         .foregroundStyle(.tertiary)
                     ForEach(Array(mounts.split(separator: "\n").enumerated()), id: \.offset) { _, line in
                         Text(String(line))
@@ -554,8 +657,8 @@ struct ContainerDetailView: View {
             if !logs.isEmpty {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("LAST 80 LOG LINES")
-                        .font(.system(size: 8, weight: .semibold))
-                        .tracking(0.6)
+                        .font(.system(size: 8, weight: .bold, design: .rounded))
+                        .tracking(0.7)
                         .foregroundStyle(.tertiary)
                     ScrollView {
                         Text(logs)
@@ -565,6 +668,11 @@ struct ContainerDetailView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                     }
                     .frame(height: 150)
+                    .padding(6)
+                    .background(
+                        RoundedRectangle(cornerRadius: 7, style: .continuous)
+                            .fill(Theme.surfaceSunken)
+                    )
                 }
             }
 
@@ -574,7 +682,7 @@ struct ContainerDetailView: View {
                     .foregroundStyle(.tertiary)
             }
         }
-        .cardStyle(padding: 10)
+        .cardStyle(padding: 11)
     }
 
     private func fetchDetail(_ container: Container) {
