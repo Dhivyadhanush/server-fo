@@ -4,6 +4,14 @@ All notable changes to S-Info. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases use
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.3] — 2026-11-10
+
+### Fixed
+
+- The "Check GitHub for updates" toggle showed as on but the store treated an
+  unset preference as off, so a fresh install never checked. An absent key now
+  means enabled, matching the UI.
+
 ## [1.0.2] — 2026-11-10
 
 ### Fixed

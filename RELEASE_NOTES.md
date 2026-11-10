@@ -1,17 +1,14 @@
-# S-Info 1.0.2
+# S-Info 1.0.3
 
-A history sampling fix.
+The final polish release for 1.0.
 
 ## Fix
 
-- **Sample interval is now really in minutes.** 1.0.1 read the "every 5 minutes"
-  setting as five seconds and took a sample on every refresh (every 30 seconds
-  by default). That meant about 46,000 rows a day instead of about 4,600. 1.0.2
-  uses the chosen interval properly; the default is one sample per 5 minutes.
-  Existing history is untouched and continues to age out at 30 days.
-
-Everything from 1.0.1 is included: the Quit button, the guard that blocks
-quitting while apt runs, and the current Homebrew cask.
+- **Update checks now match the toggle.** Settings showed "Check GitHub for
+  updates" as on, but the store read an unset preference as off, so a fresh
+  install never asked GitHub for a newer release. An absent key now means
+  enabled. Everything from 1.0.2 (correct minute-based sampling) and 1.0.1
+  (Quit safety) is included.
 
 ## Install / upgrade
 
@@ -19,9 +16,9 @@ quitting while apt runs, and the current Homebrew cask.
 brew tap Dhivyadhanush/tap
 brew trust Dhivyadhanush/tap
 brew install --cask s-info
-# or, from 1.0.1:
+# or, from an earlier version:
 brew upgrade --cask s-info
 ```
 
-Ad-hoc signed, not notarised. macOS 14+, key-based SSH, passwordless sudo for
-the upgrade feature.
+macOS 14+, key-based SSH, passwordless sudo for the scheduled upgrade.
+Ad-hoc signed, not notarised.

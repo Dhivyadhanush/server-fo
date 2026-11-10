@@ -109,7 +109,9 @@ final class Store: ObservableObject {
         reloadHistory()
         refresh()
 
-        if defaults.bool(forKey: "sinfo.checkUpdates") {
+        // @AppStorage shows this as ON by default, so an absent key must mean
+        // ON here too; bool(forKey:) would report false.
+        if defaults.object(forKey: "sinfo.checkUpdates") as? Bool ?? true {
             Task { await checkForUpdates() }
         }
     }
