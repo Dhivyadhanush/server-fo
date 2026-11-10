@@ -15,7 +15,7 @@ cask "s-info" do
   # quarantined copy (the "Not Opened" dialog offers to move it to the Trash),
   # so clear the download flag the same way --no-quarantine would.
   postflight_steps do
-    run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{appdir}/S-Info.app"]
+    run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "/Applications/S-Info.app"]
   end
 
   uninstall quit: "dev.dhanuz.s-info"
