@@ -83,7 +83,7 @@ final class HistoryStore {
                 NSLog("S-Info: could not open history at %@", self.path.path)
                 return
             }
-            sqlite3_exec(self.db, "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL;", nil, nil, nil)
+            sqlite3_exec(self.db, "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA busy_timeout=3000;", nil, nil, nil)
             self.createSchema()
         }
     }
