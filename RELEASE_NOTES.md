@@ -21,6 +21,7 @@ A menu bar app for one server: Docker containers, per-application usage, a
 
 ```shell
 brew tap Dhivyadhanush/tap
+brew trust Dhivyadhanush/tap
 brew install --cask s-info
 open /Applications/S-Info.app
 ```
@@ -36,7 +37,7 @@ Then open Settings and point it at your server (default
 
 ## Notes
 
-- Ad-hoc signed, not notarised. The cask clears quarantine automatically.
+- Ad-hoc signed, not notarised. Homebrew installs are not quarantined; manual downloads need one `xattr` command (see README).
 - The app must be running for background sampling and the 30-day schedule; the
   login item is recommended.
 - If the Mac is asleep when an upgrade is due, it runs at the first refresh

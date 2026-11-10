@@ -73,12 +73,14 @@ refresh, with connection multiplexing kept in `/tmp` for speed.
 
 ```shell
 brew tap Dhivyadhanush/tap
+brew trust Dhivyadhanush/tap   # Homebrew asks before loading third-party casks
 brew install --cask s-info
 open /Applications/S-Info.app
 ```
 
-The app signs itself ad-hoc, not notarised. The cask clears the quarantine flag
-in a `postflight` step, so a Homebrew install just works. For a manual download:
+The app signs itself ad-hoc, not notarised. Homebrew hands it to you without a
+quarantine flag, so it launches normally. For a manual download of the release
+zip, clear the flag once:
 
 ```shell
 xattr -dr com.apple.quarantine /Applications/S-Info.app
@@ -203,7 +205,8 @@ apt error.
 `--sample` or wait for the next 5-minute sample; the app must be running.
 
 **Gatekeeper says the app is damaged.** Clear quarantine with the `xattr`
-command above — the cask does this automatically.
+command above. That only happens to browser downloads; a Homebrew install is not
+quarantined.
 
 ## Releasing
 
