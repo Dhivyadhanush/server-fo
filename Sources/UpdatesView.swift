@@ -3,10 +3,10 @@ import SwiftUI
 
 struct UpdatesView: View {
     @ObservedObject var store: Store
-    @AppStorage("sinfo.autoUpgrade") private var autoUpgrade = true
-    @AppStorage("sinfo.showPendingPackages") private var showPending = true
-    @AppStorage("sinfo.showActivityLog") private var showActivity = true
-    @AppStorage("sinfo.showCacheAction") private var showCache = true
+    @AppStorage("serverfo.autoUpgrade") private var autoUpgrade = true
+    @AppStorage("serverfo.showPendingPackages") private var showPending = true
+    @AppStorage("serverfo.showActivityLog") private var showActivity = true
+    @AppStorage("serverfo.showCacheAction") private var showCache = true
 
     private enum Confirmation: Int, Identifiable {
         case upgrade, cache
@@ -358,7 +358,7 @@ struct UpdatesView: View {
     }
 
     private func logColor(_ line: String) -> Color {
-        if line.hasPrefix("[sinfo]") { return Theme.accent }
+        if line.hasPrefix("[serverfo]") { return Theme.accent }
         let lower = line.lowercased()
         if lower.contains("error") || lower.contains("failed") || lower.contains("warning") {
             return Theme.amber
@@ -457,7 +457,7 @@ struct UpdatesView: View {
             Image(systemName: "lock.shield.fill")
                 .font(.system(size: 9))
                 .foregroundStyle(Theme.accentText.opacity(0.8))
-            Text("Commands run over SSH with your key and passwordless sudo. Output is stored on this Mac and deleted after 30 days. S-Info never reboots the server.")
+            Text("Commands run over SSH with your key and passwordless sudo. Output is stored on this Mac and deleted after 30 days. Server-Fo never reboots the server.")
                 .font(.system(size: 8.5))
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)

@@ -3,7 +3,7 @@ import Foundation
 // LaunchAgent instead of SMAppService: the app is locally built and ad-hoc
 // signed, where SMAppService silently fails outside /Applications.
 enum LoginItem {
-    static let label = "dev.dhanuz.s-info"
+    static let label = "dev.dhanuz.server-fo"
 
     static var url: URL {
         FileManager.default.homeDirectoryForCurrentUser

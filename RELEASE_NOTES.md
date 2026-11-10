@@ -1,44 +1,40 @@
-# S-Info 1.1.0
+# Server-Fo 1.2.0
 
-A visual overhaul with real controls over what the panel shows, plus a server
-RAM cache action.
+The app formerly known as **S-Info** is now **Server-Fo**.
 
-## New
+## Rename
 
-- **Themed UI.** Gradient canvas, subtle grid, glass cards, glow accents,
-  animated tab pills and rebuilt metric tiles, charts, container rows and
-  history timeline.
-- **System / Light / Dark.** Follows macOS by default; force either appearance
-  in Settings → Appearance. Every colour adapts.
-- **What is visible.** Choose the status pill, hostname, footer, menu bar dot
-  and count, the History and Updates tabs, every container-row field, detail
-  metrics/charts/mounts, history events, package list, activity log and the
-  cache action. Hidden data stays recorded; only the UI changes. "Show
-  everything" resets it.
-- **RAM cache.** Sync and drop the server's clean page cache (page cache,
-  dentries, inodes) with a confirmation, last-cleared time and logged output.
-  Applications keep their memory and nothing restarts.
-- **New icon.** The Dock icon is now the same two-unit rack as the menu bar
-  glyph, generated from one shape.
+- New app: `Server-Fo.app`, bundle `dev.dhanuz.server-fo`, executable
+  `ServerInfo`.
+- New Homebrew cask: **`server-fo`**. The old `s-info` cask is retired.
+- New data location: `~/Library/Application Support/Server-Fo`.
+- This is a clean break — a fresh history database and fresh preferences. Old
+  S-Info data is not migrated.
 
-## Commands
-
-```shell
-sudo apt update && sudo apt upgrade -y                     # every 30 days
-sudo -n sh -c 'echo 3 > /proc/sys/vm/drop_caches'          # RAM cache
-```
-
-Both are logged locally for 30 days. Neither reboots the server.
-
-## Install / upgrade
+## Install
 
 ```shell
 brew tap Dhivyadhanush/tap
 brew trust Dhivyadhanush/tap
-brew install --cask s-info
-# or
-brew upgrade --cask s-info
+brew install --cask server-fo
+open /Applications/Server-Fo.app
 ```
 
-macOS 14+, key-based SSH, passwordless sudo for the two maintenance actions.
-Ad-hoc signed, not notarised.
+If S-Info is already installed, remove it first so there is only one app:
+
+```shell
+brew uninstall --cask --zap s-info
+brew install --cask server-fo
+```
+
+## Same features
+
+Docker containers grouped by stack, per-application CPU/memory/network/I/O,
+mounts and logs on demand, 30-day local history, a scheduled
+`sudo apt update && sudo apt upgrade -y` every 30 days, a RAM cache clear, the
+adaptive light/dark theme, and the visibility controls.
+
+No Apple developer account is involved. The cask clears the download quarantine
+flag so the ad-hoc-signed app opens normally on macOS 27.
+
+macOS 14+, key-based SSH, passwordless sudo for the maintenance actions.

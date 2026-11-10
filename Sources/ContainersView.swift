@@ -9,14 +9,14 @@ struct ContainersView: View {
     @State private var selected: String?
     @State private var hovered: String?
 
-    @AppStorage("sinfo.showRowImage") private var showImage = true
-    @AppStorage("sinfo.showRowUptime") private var showUptime = true
-    @AppStorage("sinfo.showRowPorts") private var showPorts = true
-    @AppStorage("sinfo.showRowHealth") private var showHealth = true
-    @AppStorage("sinfo.showRowRestarts") private var showRestarts = true
-    @AppStorage("sinfo.showRowCPU") private var showCPU = true
-    @AppStorage("sinfo.showRowMemory") private var showMemory = true
-    @AppStorage("sinfo.showRowStackCounts") private var showStackCounts = true
+    @AppStorage("serverfo.showRowImage") private var showImage = true
+    @AppStorage("serverfo.showRowUptime") private var showUptime = true
+    @AppStorage("serverfo.showRowPorts") private var showPorts = true
+    @AppStorage("serverfo.showRowHealth") private var showHealth = true
+    @AppStorage("serverfo.showRowRestarts") private var showRestarts = true
+    @AppStorage("serverfo.showRowCPU") private var showCPU = true
+    @AppStorage("serverfo.showRowMemory") private var showMemory = true
+    @AppStorage("serverfo.showRowStackCounts") private var showStackCounts = true
 
     enum SortMode: String, CaseIterable, Identifiable {
         case cpu = "CPU"
@@ -380,9 +380,9 @@ struct ContainerDetailView: View {
     @State private var loadingDetail = false
     @State private var detailError: String?
 
-    @AppStorage("sinfo.showDetailMetrics") private var showMetrics = true
-    @AppStorage("sinfo.showDetailCharts") private var showCharts = true
-    @AppStorage("sinfo.showDetailInspect") private var showInspect = true
+    @AppStorage("serverfo.showDetailMetrics") private var showMetrics = true
+    @AppStorage("serverfo.showDetailCharts") private var showCharts = true
+    @AppStorage("serverfo.showDetailInspect") private var showInspect = true
 
     private var container: Container? {
         store.probe?.containers.first { $0.name == name }
@@ -579,7 +579,7 @@ struct ContainerDetailView: View {
                     }
                 }
             } else {
-                Text("History builds up as S-Info samples every \(Int(store.sampleInterval / 60)) min. Nothing older than 30 days is kept.")
+                Text("History builds up as Server-Fo samples every \(Int(store.sampleInterval / 60)) min. Nothing older than 30 days is kept.")
                     .font(.system(size: 9.5))
                     .foregroundStyle(.tertiary)
             }

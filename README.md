@@ -1,6 +1,6 @@
-# S-Info
+# Server-Fo
 
-<img src="docs/icon.png" width="96" align="right" alt="S-Info icon">
+<img src="docs/icon.png" width="96" align="right" alt="Server-Fo icon">
 
 A macOS menu bar app for **one server over SSH**: what is running in Docker,
 what each application is using, a rolling 30-day history, a scheduled `apt`
@@ -8,10 +8,13 @@ upgrade with logs, and a button to clear the server's RAM cache. The interface
 follows the system theme, has a light/dark override, and lets you hide anything
 you do not want to see.
 
-S-Info deliberately does **not** show host CPU, overall RAM, or network totals —
+Server-Fo deliberately does **not** show host CPU, overall RAM, or network totals —
 the [dynamic island](https://github.com/Dhivyadhanush/islet) already tracks the
 machine. This app answers a narrower question: *which application on the server
 is doing what, and is the box up to date?*
+
+> **Formerly S-Info.** The app, bundle and Homebrew cask are now `Server-Fo` /
+> `server-fo`. A clean install starts with fresh history and preferences.
 
 <p align="center">
   <img src="docs/panel.png" width="420" alt="Container list, dark">
@@ -67,7 +70,7 @@ line by line, and retries the next day if it fails. Nothing else is ever run: no
 
 ## How it connects
 
-S-Info shells out to the system `/usr/bin/ssh` in batch mode with your existing
+Server-Fo shells out to the system `/usr/bin/ssh` in batch mode with your existing
 key. There is no agent, no daemon, no password prompt and no key stored by the
 app. The default target is `server1@192.168.1.22`; change it in
 **Settings → Connection**.
@@ -92,18 +95,18 @@ refresh, with connection multiplexing kept in `/tmp` for speed.
 ```shell
 brew tap Dhivyadhanush/tap
 brew trust Dhivyadhanush/tap   # Homebrew asks before loading third-party casks
-brew install --cask s-info
-open /Applications/S-Info.app
+brew install --cask server-fo
+open /Applications/Server-Fo.app
 ```
 
 The app signs itself ad-hoc, not notarised, so the cask clears the download
-quarantine flag after install. Without that, macOS 27 shows “S-Info.app Not
+quarantine flag after install. Without that, macOS 27 shows “Server-Fo.app Not
 Opened” and offers to move the app to the Trash. For a manual download of the
 release zip, clear the flag once (or use **System Settings → Privacy & Security
 → Open Anyway**):
 
 ```shell
-xattr -dr com.apple.quarantine /Applications/S-Info.app
+xattr -dr com.apple.quarantine /Applications/Server-Fo.app
 ```
 
 Then open **Settings** (gear icon) and check:
@@ -119,7 +122,7 @@ Then open **Settings** (gear icon) and check:
 ## History and retention
 
 - One sample every 5 minutes by default (configurable to 1/5/15/30).
-- Stored on this Mac: `~/Library/Application Support/S-Info/history.sqlite`.
+- Stored on this Mac: `~/Library/Application Support/Server-Fo/history.sqlite`.
 - State changes (start, stop, restart, health) are recorded as events.
 - Everything older than **30 days** is deleted automatically. **Prune now** in
   Settings runs the same deletion immediately.
@@ -163,7 +166,7 @@ Every mode is available without the UI, which makes the app scriptable and
 testable:
 
 ```shell
-S=/Applications/S-Info.app/Contents/MacOS/SInfo
+S=/Applications/Server-Fo.app/Contents/MacOS/ServerInfo
 
 $S --probe             # one-line summary plus a container table
 $S --dump              # the same, with image/stack/ports/IO for each container
@@ -193,7 +196,7 @@ No Xcode project and no packages: `build.sh` compiles all Swift sources with
 ```shell
 ./icon.sh    # regenerates the app icon, menu bar glyph and docs/icon.png
 ./build.sh
-open .build/S-Info.app
+open .build/Server-Fo.app
 ```
 
 Local builds land in a hidden `.build/` folder, so Spotlight and Launchpad only
@@ -204,7 +207,7 @@ plugin, so `build.sh` locates `libSwiftUIMacros.dylib` in the active Xcode
 toolchain and passes `-plugin-path` when needed. Build a universal app with:
 
 ```shell
-ARCHS="arm64 x86_64" VERSION=1.1.0 ./build.sh
+ARCHS="arm64 x86_64" VERSION=1.2.0 ./build.sh
 ```
 
 Layout:
@@ -249,27 +252,27 @@ activity log.
 **History panel is empty.** History starts with the first sample. Click
 `--sample` or wait for the next 5-minute sample; the app must be running.
 
-**“S-Info.app” Not Opened, or the app vanished after the dialog.** Gatekeeper
+**“Server-Fo.app” Not Opened, or the app vanished after the dialog.** Gatekeeper
 moved the quarantined copy to the Trash. Reinstall with the current cask
-(`brew reinstall --cask s-info`), which clears quarantine, or run the `xattr`
+(`brew reinstall --cask server-fo`), which clears quarantine, or run the `xattr`
 command above. Nothing is wrong with the app or your data.
 
 ## Releasing
 
 ```shell
 # 1. bump the version in build.sh (default VERSION) and CHANGELOG.md
-git commit -am "release v1.1.0"
-git tag v1.1.0 && git push --tags
+git commit -am "release v1.2.0"
+git tag v1.2.0 && git push --tags
 
 # 2. the release workflow builds a universal zip and publishes the GitHub
 #    release with RELEASE_NOTES.md
 
 # 3. if the repository has a TAP_TOKEN secret (a PAT with contents:write on
-#    homebrew-tap) the workflow also bumps Casks/s-info.rb and its checksum;
+#    homebrew-tap) the workflow also bumps Casks/server-fo.rb and its checksum;
 #    otherwise update that file by hand
 
 # 4. users move with
-brew upgrade --cask s-info
+brew upgrade --cask server-fo
 ```
 
 Tagging a release needs `TAP_TOKEN` to make step 3 automatic. Without it,

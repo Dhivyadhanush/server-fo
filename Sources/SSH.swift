@@ -9,10 +9,10 @@ struct SSHConfig {
     var identity: String
 
     enum Keys {
-        static let host = "sinfo.ssh.host"
-        static let user = "sinfo.ssh.user"
-        static let port = "sinfo.ssh.port"
-        static let identity = "sinfo.ssh.identity"
+        static let host = "serverfo.ssh.host"
+        static let user = "serverfo.ssh.user"
+        static let port = "serverfo.ssh.port"
+        static let identity = "serverfo.ssh.identity"
     }
 
     static func current() -> SSHConfig {
@@ -174,7 +174,7 @@ enum SSH {
     }
 
     private static func arguments(for config: SSHConfig) -> [String] {
-        let socket = "/tmp/sinfo-\(getuid())-%C"
+        let socket = "/tmp/serverfo-\(getuid())-%C"
         var args = [
             "-T",
             "-o", "BatchMode=yes",

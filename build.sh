@@ -1,11 +1,11 @@
 #!/bin/bash
-# Builds S-Info.app without an Xcode project: one swiftc call per arch, lipo,
+# Builds Server-Fo.app without an Xcode project: one swiftc call per arch, lipo,
 # then a hand-written Info.plist and an ad-hoc signature.
 set -euo pipefail
 cd "$(dirname "$0")"
 
-APP=".build/S-Info.app"
-VERSION="${VERSION:-1.1.0}"
+APP=".build/Server-Fo.app"
+VERSION="${VERSION:-1.2.0}"
 BUILD="${BUILD:-1}"
 # ARCHS="arm64 x86_64" produces a universal binary; default is this machine.
 ARCHS="${ARCHS:-$(uname -m)}"
@@ -37,10 +37,10 @@ for arch in $ARCHS; do
     "${PLUGIN_ARGS[@]}" \
     Sources/*.swift \
     -lsqlite3 \
-    -o ".build/SInfo-$arch"
-  SLICES+=(".build/SInfo-$arch")
+    -o ".build/ServerInfo-$arch"
+  SLICES+=(".build/ServerInfo-$arch")
 done
-lipo -create "${SLICES[@]}" -output "$APP/Contents/MacOS/SInfo"
+lipo -create "${SLICES[@]}" -output "$APP/Contents/MacOS/ServerInfo"
 
 cp Resources/AppIcon.icns "$APP/Contents/Resources/AppIcon.icns"
 cp Resources/MenuBarIcon.png "$APP/Contents/Resources/MenuBarIcon.png"
@@ -51,10 +51,10 @@ cat > "$APP/Contents/Info.plist" <<PLIST
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-  <key>CFBundleIdentifier</key><string>dev.dhanuz.s-info</string>
-  <key>CFBundleName</key><string>S-Info</string>
-  <key>CFBundleDisplayName</key><string>S-Info</string>
-  <key>CFBundleExecutable</key><string>SInfo</string>
+  <key>CFBundleIdentifier</key><string>dev.dhanuz.server-fo</string>
+  <key>CFBundleName</key><string>Server-Fo</string>
+  <key>CFBundleDisplayName</key><string>Server-Fo</string>
+  <key>CFBundleExecutable</key><string>ServerInfo</string>
   <key>CFBundleIconFile</key><string>AppIcon</string>
   <key>CFBundlePackageType</key><string>APPL</string>
   <key>CFBundleShortVersionString</key><string>${VERSION}</string>
@@ -63,7 +63,7 @@ cat > "$APP/Contents/Info.plist" <<PLIST
   <key>LSApplicationCategoryType</key><string>public.app-category.developer-tools</string>
   <key>LSUIElement</key><true/>
   <key>NSHighResolutionCapable</key><true/>
-  <key>NSHumanReadableCopyright</key><string>MIT licensed. S-Info shows one server's applications.</string>
+  <key>NSHumanReadableCopyright</key><string>MIT licensed. Server-Fo shows one server's applications.</string>
 </dict>
 </plist>
 PLIST
@@ -71,4 +71,4 @@ PLIST
 codesign --force --sign - "$APP" 2>/dev/null
 echo "Built $APP $VERSION"
 echo "Run: open $PWD/$APP"
-echo "Test: $APP/Contents/MacOS/SInfo --selftest"
+echo "Test: $APP/Contents/MacOS/ServerInfo --selftest"

@@ -1,8 +1,20 @@
 # Changelog
 
-All notable changes to S-Info. The format follows
+All notable changes to Server-Fo. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases use
 [Semantic Versioning](https://semver.org/).
+
+## [1.2.0] — 2026-11-10
+
+### Changed
+
+- Renamed the app from **S-Info** to **Server-Fo**.
+- New bundle identifier `dev.dhanuz.server-fo`, executable `ServerInfo`, app
+  bundle `Server-Fo.app`, support folder `~/Library/Application Support/Server-Fo`,
+  lock file `Server-Fo.lock`, and LaunchAgent `dev.dhanuz.server-fo`.
+- New Homebrew token `server-fo`. The old `s-info` cask is removed from the tap.
+- This is a clean break: the new app starts with a fresh history database and
+  fresh preferences. Old S-Info data is not migrated.
 
 ## [1.1.0] — 2026-11-10
 
@@ -104,12 +116,12 @@ First release.
 - Headless commands: `--probe`, `--dump`, `--history`, `--sample`, `--prune`,
   `--upgrade`, `--upgrade-if-due`, `--update`, `--loginitem`, `--selftest`, and
   snapshot renderers for the docs.
-- Tag-driven GitHub release workflow producing a universal `S-Info.zip`, and a
+- Tag-driven GitHub release workflow producing a universal `Server-Fo.zip`, and a
   Homebrew cask in `Dhivyadhanush/homebrew-tap`.
 
 ### Notes
 
 - Host CPU, overall memory and network totals are intentionally excluded; the
-  dynamic island tracks those. S-Info only reports per-application figures.
+  dynamic island tracks those. Server-Fo only reports per-application figures.
 - The app never reboots the server, even when a kernel upgrade asks for it.
 - Requires key-based SSH and, for upgrades only, passwordless sudo.

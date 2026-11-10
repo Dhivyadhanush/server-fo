@@ -95,7 +95,7 @@ enum AppearanceMode: String, CaseIterable, Identifiable {
     }
 
     static func applyCurrent() {
-        apply(UserDefaults.standard.string(forKey: "sinfo.appearance") ?? "system")
+        apply(UserDefaults.standard.string(forKey: "serverfo.appearance") ?? "system")
     }
 }
 

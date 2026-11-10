@@ -43,11 +43,11 @@ struct PanelView: View {
     @State private var showSettings = false
     @Namespace private var tabNamespace
 
-    @AppStorage("sinfo.showHistoryTab") private var showHistoryTab = true
-    @AppStorage("sinfo.showUpdatesTab") private var showUpdatesTab = true
-    @AppStorage("sinfo.showStatusPill") private var showStatusPill = true
-    @AppStorage("sinfo.showHost") private var showHost = true
-    @AppStorage("sinfo.showFooter") private var showFooter = true
+    @AppStorage("serverfo.showHistoryTab") private var showHistoryTab = true
+    @AppStorage("serverfo.showUpdatesTab") private var showUpdatesTab = true
+    @AppStorage("serverfo.showStatusPill") private var showStatusPill = true
+    @AppStorage("serverfo.showHost") private var showHost = true
+    @AppStorage("serverfo.showFooter") private var showFooter = true
 
     init(store: Store, initialTab: Store.Tab = .containers) {
         self.store = store
@@ -103,7 +103,7 @@ struct PanelView: View {
             iconBadge
 
             VStack(alignment: .leading, spacing: 2) {
-                Text("S-Info")
+                Text("Server-Fo")
                     .font(.system(size: 16, weight: .heavy, design: .rounded))
                     .tracking(-0.2)
 
@@ -137,7 +137,7 @@ struct PanelView: View {
                 showSettings = true
             }
 
-            GlassIconButton(icon: "power", help: "Quit S-Info") {
+            GlassIconButton(icon: "power", help: "Quit Server-Fo") {
                 NSApp.terminate(nil)
             }
         }
@@ -309,7 +309,7 @@ extension Store.Tab {
 
 struct MenuBarLabel: View {
     @ObservedObject var store: Store
-    @AppStorage("sinfo.showMenuDot") private var showDot = true
+    @AppStorage("serverfo.showMenuDot") private var showDot = true
 
     var body: some View {
         HStack(spacing: 2) {
@@ -345,12 +345,12 @@ struct MenuBarLabel: View {
 
     private var helpText: String {
         let target = SSHConfig.current().label
-        guard let probe = store.probe else { return "S-Info · \(target)" }
-        return "S-Info · \(probe.hostname) · \(probe.running) running, \(probe.stopped) stopped · \(probe.aptUpgradable.count) updates"
+        guard let probe = store.probe else { return "Server-Fo · \(target)" }
+        return "Server-Fo · \(probe.hostname) · \(probe.running) running, \(probe.stopped) stopped · \(probe.aptUpgradable.count) updates"
     }
 
     private var badge: Int? {
-        guard UserDefaults.standard.bool(forKey: "sinfo.barBadge") else { return nil }
+        guard UserDefaults.standard.bool(forKey: "serverfo.barBadge") else { return nil }
         guard let probe = store.probe else { return nil }
         let attention = probe.unhealthy + probe.stopped
         return attention > 0 ? attention : nil

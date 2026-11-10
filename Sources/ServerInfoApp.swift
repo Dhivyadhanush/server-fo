@@ -23,7 +23,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 }
 
 @main
-struct SInfoApp: App {
+struct ServerInfoApp: App {
     @StateObject private var store = Store()
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 

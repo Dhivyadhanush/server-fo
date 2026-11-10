@@ -15,7 +15,7 @@ jobs:
         run: ARCHS="arm64 x86_64" ./build.sh
 
       - name: Self test
-        run: ./.build/S-Info.app/Contents/MacOS/SInfo --selftest
+        run: ./.build/Server-Fo.app/Contents/MacOS/ServerInfo --selftest
 
       - name: Verify signature
-        run: codesign --verify --deep --strict --verbose=2 .build/S-Info.app
+        run: codesign --verify --deep --strict --verbose=2 .build/Server-Fo.app

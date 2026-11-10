@@ -3,7 +3,7 @@ import Foundation
 // The cask tracks `latest`, and `brew upgrade` does nothing for it, so the only
 // honest way to tell someone an update exists is to ask GitHub once a day.
 enum UpdateCheck {
-    static let repo = "Dhivyadhanush/s-info"
+    static let repo = "Dhivyadhanush/server-fo"
 
     static func newer(latest tag: String, current: String) -> Bool {
         let latest = numbers(tag)

@@ -62,7 +62,7 @@ enum Headless {
             do {
                 let raw = try await RemoteProbe.fetch()
                 let probe = ProbeParser.parse(raw)
-                print("S-Info · \(probe.hostname) · \(probe.os)")
+                print("Server-Fo · \(probe.hostname) · \(probe.os)")
                 print("kernel \(probe.kernel) · docker \(probe.dockerVersion.isEmpty ? "unavailable" : probe.dockerVersion)")
                 print("\(probe.running)/\(probe.containers.count) running · \(probe.aptUpgradable.count) upgradable · reboot \(probe.rebootRequired ? "required" : "not required")")
                 print("")
@@ -153,7 +153,7 @@ enum Headless {
 
     private static func detailSnapshot(_ name: String?, path: String?) -> Never {
         guard let name else {
-            print("usage: SInfo --snapshot-detail <container> [path]")
+            print("usage: ServerInfo --snapshot-detail <container> [path]")
             exit(2)
         }
         let destination = path ?? ".build/detail-\(name).png"
@@ -200,7 +200,7 @@ enum Headless {
 
     @MainActor
     private static func render<V: View>(_ view: V, to destination: String) async -> Bool {
-        switch ProcessInfo.processInfo.environment["SINFO_SNAPSHOT_SCHEME"]?.lowercased() {
+        switch ProcessInfo.processInfo.environment["SERVERFO_SNAPSHOT_SCHEME"]?.lowercased() {
         case "light": NSApp.appearance = NSAppearance(named: .aqua)
         case "dark": NSApp.appearance = NSAppearance(named: .darkAqua)
         default: break
@@ -382,7 +382,7 @@ enum Headless {
 
     private static func loginItem(_ value: String?) -> Never {
         guard let value, value == "on" || value == "off" else {
-            print("usage: SInfo --loginitem on|off")
+            print("usage: ServerInfo --loginitem on|off")
             exit(2)
         }
         do {
@@ -403,7 +403,7 @@ enum Headless {
                 return 1
             }
             print(UpdateCheck.newer(latest: tag, current: current)
-                  ? "v\(current) · \(tag) available (brew upgrade --cask s-info)"
+                  ? "v\(current) · \(tag) available (brew upgrade --cask server-fo)"
                   : "v\(current) · up to date")
             return 0
         }
@@ -490,7 +490,7 @@ enum SelfTest {
 
         // Retention and metadata, on a throwaway database.
         let temporary = FileManager.default.temporaryDirectory
-            .appendingPathComponent("sinfo-selftest-\(UUID().uuidString).sqlite")
+            .appendingPathComponent("serverfo-selftest-\(UUID().uuidString).sqlite")
         let history = HistoryStore(path: temporary)
         history.setMeta("probe", "value")
         check("meta round trip", history.meta("probe") == "value")

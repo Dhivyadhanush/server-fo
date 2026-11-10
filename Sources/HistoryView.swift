@@ -26,7 +26,7 @@ struct HistoryView: View {
     @State private var loading = false
     @State private var loaded = false
 
-    @AppStorage("sinfo.showHistoryEvents") private var showEvents = true
+    @AppStorage("serverfo.showHistoryEvents") private var showEvents = true
 
     var body: some View {
         VStack(spacing: 8) {
@@ -112,7 +112,7 @@ struct HistoryView: View {
                     Image(systemName: "waveform.path.ecg")
                         .font(.system(size: 14))
                         .foregroundStyle(Theme.accent.opacity(0.6))
-                    Text("No samples yet. S-Info records one every \(Int(store.sampleInterval / 60)) minutes while it is running.")
+                    Text("No samples yet. Server-Fo records one every \(Int(store.sampleInterval / 60)) minutes while it is running.")
                         .font(.system(size: 10))
                         .foregroundStyle(.secondary)
                 }
@@ -314,7 +314,7 @@ struct HistoryView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("30-day retention")
                     .font(.system(size: 10.5, weight: .semibold))
-                Text("Samples, state changes and activity logs older than 30 days are deleted automatically. Everything is local, in ~/Library/Application Support/S-Info/history.sqlite.")
+                Text("Samples, state changes and activity logs older than 30 days are deleted automatically. Everything is local, in ~/Library/Application Support/Server-Fo/history.sqlite.")
                     .font(.system(size: 9))
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)

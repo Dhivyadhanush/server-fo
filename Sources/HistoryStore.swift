@@ -66,12 +66,12 @@ final class HistoryStore {
 
     let path: URL
     private var db: OpaquePointer?
-    private let queue = DispatchQueue(label: "dev.dhanuz.sinfo.history")
+    private let queue = DispatchQueue(label: "dev.dhanuz.serverfo.history")
     private var lastPrune: Date = .distantPast
 
     init(path: URL? = nil) {
         let support = FileManager.default.homeDirectoryForCurrentUser
-            .appendingPathComponent("Library/Application Support/S-Info", isDirectory: true)
+            .appendingPathComponent("Library/Application Support/Server-Fo", isDirectory: true)
         try? FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
         self.path = path ?? support.appendingPathComponent("history.sqlite")
 
@@ -80,7 +80,7 @@ final class HistoryStore {
                 self.path.path, &self.db,
                 SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | SQLITE_OPEN_FULLMUTEX, nil
             ) == SQLITE_OK else {
-                NSLog("S-Info: could not open history at %@", self.path.path)
+                NSLog("Server-Fo: could not open history at %@", self.path.path)
                 return
             }
             sqlite3_exec(self.db, "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA busy_timeout=3000;", nil, nil, nil)
@@ -478,7 +478,7 @@ final class HistoryStore {
     private func prepare(_ sql: String) -> OpaquePointer? {
         var statement: OpaquePointer?
         guard sqlite3_prepare_v2(db, sql, -1, &statement, nil) == SQLITE_OK else {
-            NSLog("S-Info: SQL prepare failed: %@", String(cString: sqlite3_errmsg(db)))
+            NSLog("Server-Fo: SQL prepare failed: %@", String(cString: sqlite3_errmsg(db)))
             return nil
         }
         return statement

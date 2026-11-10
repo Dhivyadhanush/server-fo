@@ -55,17 +55,17 @@ final class Store: ObservableObject {
 
     // Settings, read live so a change in the sheet applies without a restart.
     var refreshInterval: TimeInterval {
-        let value = UserDefaults.standard.integer(forKey: "sinfo.refresh")
+        let value = UserDefaults.standard.integer(forKey: "serverfo.refresh")
         return value == 0 ? 30 : TimeInterval(max(10, value))
     }
 
     /// The setting is in minutes; the timer works in seconds.
     var sampleInterval: TimeInterval {
-        SampleCadence.seconds(fromSetting: UserDefaults.standard.integer(forKey: "sinfo.sample"))
+        SampleCadence.seconds(fromSetting: UserDefaults.standard.integer(forKey: "serverfo.sample"))
     }
 
     var autoUpgrade: Bool {
-        UserDefaults.standard.object(forKey: "sinfo.autoUpgrade") as? Bool ?? true
+        UserDefaults.standard.object(forKey: "serverfo.autoUpgrade") as? Bool ?? true
     }
 
     var nextUpgrade: Date? {
@@ -119,7 +119,7 @@ final class Store: ObservableObject {
 
         // @AppStorage shows this as ON by default, so an absent key must mean
         // ON here too; bool(forKey:) would report false.
-        if defaults.object(forKey: "sinfo.checkUpdates") as? Bool ?? true {
+        if defaults.object(forKey: "serverfo.checkUpdates") as? Bool ?? true {
             Task { await checkForUpdates() }
         }
     }
@@ -278,7 +278,7 @@ final class Store: ObservableObject {
             isUpgrading = false
 
             if isScheduled, code != 0 {
-                appendUpgradeLine("[sinfo] scheduled upgrade failed; retrying in 24h")
+                appendUpgradeLine("[serverfo] scheduled upgrade failed; retrying in 24h")
             }
 
             reloadHistory()
@@ -413,19 +413,19 @@ enum Maintenance {
     static let script = """
     export LC_ALL=C
     export DEBIAN_FRONTEND=noninteractive
-    echo "[sinfo] $(date -Is) apt update"
+    echo "[serverfo] $(date -Is) apt update"
     sudo -n apt update
     rc=$?
     if [ $rc -ne 0 ]; then
-      echo "[sinfo] apt update failed with exit $rc"
+      echo "[serverfo] apt update failed with exit $rc"
       exit $rc
     fi
-    echo "[sinfo] $(date -Is) apt upgrade"
+    echo "[serverfo] $(date -Is) apt upgrade"
     sudo -n env DEBIAN_FRONTEND=noninteractive apt upgrade -y
     rc=$?
-    echo "[sinfo] $(date -Is) apt upgrade exited $rc"
+    echo "[serverfo] $(date -Is) apt upgrade exited $rc"
     if [ -f /var/run/reboot-required ]; then
-      echo "[sinfo] reboot required: $(cat /var/run/reboot-required 2>/dev/null)"
+      echo "[serverfo] reboot required: $(cat /var/run/reboot-required 2>/dev/null)"
     fi
     exit $rc
     """
@@ -434,14 +434,14 @@ enum Maintenance {
     /// running applications are not touched and nothing is restarted.
     static let cacheScript = """
     export LC_ALL=C
-    echo "[sinfo] $(date -Is) sync"
+    echo "[serverfo] $(date -Is) sync"
     sync
-    echo "[sinfo] $(date -Is) dropping page cache, dentries and inodes"
+    echo "[serverfo] $(date -Is) dropping page cache, dentries and inodes"
     sudo -n sh -c 'echo 3 > /proc/sys/vm/drop_caches'
     rc=$?
-    echo "[sinfo] cache clear exited $rc"
+    echo "[serverfo] cache clear exited $rc"
     if [ $rc -ne 0 ]; then
-      echo "[sinfo] passwordless sudo for sh is required to drop caches"
+      echo "[serverfo] passwordless sudo for sh is required to drop caches"
     fi
     exit $rc
     """

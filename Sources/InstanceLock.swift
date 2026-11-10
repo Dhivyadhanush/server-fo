@@ -11,7 +11,7 @@ enum InstanceLock {
             .appendingPathComponent("Library/Application Support", isDirectory: true)
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
-        let path = directory.appendingPathComponent("S-Info.lock").path
+        let path = directory.appendingPathComponent("Server-Fo.lock").path
         descriptor = open(path, O_CREAT | O_RDWR, 0o644)
         // Fail open: a broken lock must not make the app unlaunchable.
         guard descriptor >= 0 else { return true }

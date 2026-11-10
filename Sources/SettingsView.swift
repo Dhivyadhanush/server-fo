@@ -5,38 +5,38 @@ struct SettingsView: View {
     @ObservedObject var store: Store
     @Environment(\.dismiss) private var dismiss
 
-    @AppStorage("sinfo.ssh.host") private var host = "192.168.1.22"
-    @AppStorage("sinfo.ssh.user") private var user = "server1"
-    @AppStorage("sinfo.ssh.port") private var port = 22
-    @AppStorage("sinfo.ssh.identity") private var identity = ""
-    @AppStorage("sinfo.refresh") private var refresh = 30
-    @AppStorage("sinfo.sample") private var sample = 5
-    @AppStorage("sinfo.autoUpgrade") private var autoUpgrade = true
-    @AppStorage("sinfo.checkUpdates") private var checkUpdates = true
-    @AppStorage("sinfo.barBadge") private var barBadge = false
-    @AppStorage("sinfo.appearance") private var appearance = "system"
+    @AppStorage("serverfo.ssh.host") private var host = "192.168.1.22"
+    @AppStorage("serverfo.ssh.user") private var user = "server1"
+    @AppStorage("serverfo.ssh.port") private var port = 22
+    @AppStorage("serverfo.ssh.identity") private var identity = ""
+    @AppStorage("serverfo.refresh") private var refresh = 30
+    @AppStorage("serverfo.sample") private var sample = 5
+    @AppStorage("serverfo.autoUpgrade") private var autoUpgrade = true
+    @AppStorage("serverfo.checkUpdates") private var checkUpdates = true
+    @AppStorage("serverfo.barBadge") private var barBadge = false
+    @AppStorage("serverfo.appearance") private var appearance = "system"
 
-    @AppStorage("sinfo.showHistoryTab") private var showHistoryTab = true
-    @AppStorage("sinfo.showUpdatesTab") private var showUpdatesTab = true
-    @AppStorage("sinfo.showStatusPill") private var showStatusPill = true
-    @AppStorage("sinfo.showHost") private var showHost = true
-    @AppStorage("sinfo.showFooter") private var showFooter = true
-    @AppStorage("sinfo.showMenuDot") private var showMenuDot = true
-    @AppStorage("sinfo.showRowImage") private var showRowImage = true
-    @AppStorage("sinfo.showRowUptime") private var showRowUptime = true
-    @AppStorage("sinfo.showRowPorts") private var showRowPorts = true
-    @AppStorage("sinfo.showRowHealth") private var showRowHealth = true
-    @AppStorage("sinfo.showRowRestarts") private var showRowRestarts = true
-    @AppStorage("sinfo.showRowCPU") private var showRowCPU = true
-    @AppStorage("sinfo.showRowMemory") private var showRowMemory = true
-    @AppStorage("sinfo.showRowStackCounts") private var showRowStackCounts = true
-    @AppStorage("sinfo.showDetailMetrics") private var showDetailMetrics = true
-    @AppStorage("sinfo.showDetailCharts") private var showDetailCharts = true
-    @AppStorage("sinfo.showDetailInspect") private var showDetailInspect = true
-    @AppStorage("sinfo.showHistoryEvents") private var showHistoryEvents = true
-    @AppStorage("sinfo.showPendingPackages") private var showPendingPackages = true
-    @AppStorage("sinfo.showActivityLog") private var showActivityLog = true
-    @AppStorage("sinfo.showCacheAction") private var showCacheAction = true
+    @AppStorage("serverfo.showHistoryTab") private var showHistoryTab = true
+    @AppStorage("serverfo.showUpdatesTab") private var showUpdatesTab = true
+    @AppStorage("serverfo.showStatusPill") private var showStatusPill = true
+    @AppStorage("serverfo.showHost") private var showHost = true
+    @AppStorage("serverfo.showFooter") private var showFooter = true
+    @AppStorage("serverfo.showMenuDot") private var showMenuDot = true
+    @AppStorage("serverfo.showRowImage") private var showRowImage = true
+    @AppStorage("serverfo.showRowUptime") private var showRowUptime = true
+    @AppStorage("serverfo.showRowPorts") private var showRowPorts = true
+    @AppStorage("serverfo.showRowHealth") private var showRowHealth = true
+    @AppStorage("serverfo.showRowRestarts") private var showRowRestarts = true
+    @AppStorage("serverfo.showRowCPU") private var showRowCPU = true
+    @AppStorage("serverfo.showRowMemory") private var showRowMemory = true
+    @AppStorage("serverfo.showRowStackCounts") private var showRowStackCounts = true
+    @AppStorage("serverfo.showDetailMetrics") private var showDetailMetrics = true
+    @AppStorage("serverfo.showDetailCharts") private var showDetailCharts = true
+    @AppStorage("serverfo.showDetailInspect") private var showDetailInspect = true
+    @AppStorage("serverfo.showHistoryEvents") private var showHistoryEvents = true
+    @AppStorage("serverfo.showPendingPackages") private var showPendingPackages = true
+    @AppStorage("serverfo.showActivityLog") private var showActivityLog = true
+    @AppStorage("serverfo.showCacheAction") private var showCacheAction = true
 
     @State private var loginItem = LoginItem.enabled
     @State private var testing = false
@@ -81,7 +81,7 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 1) {
                 Text("Settings")
                     .font(.system(size: 15, weight: .heavy, design: .rounded))
-                Text("S-Info · \(SSHConfig.current().label)")
+                Text("Server-Fo · \(SSHConfig.current().label)")
                     .font(.system(size: 9.5))
                     .foregroundStyle(.secondary)
             }
@@ -192,14 +192,14 @@ struct SettingsView: View {
 
     private func resetVisibility() {
         let keys = [
-            "sinfo.showHistoryTab", "sinfo.showUpdatesTab", "sinfo.showStatusPill",
-            "sinfo.showHost", "sinfo.showFooter", "sinfo.showMenuDot",
-            "sinfo.showRowImage", "sinfo.showRowUptime", "sinfo.showRowPorts",
-            "sinfo.showRowHealth", "sinfo.showRowRestarts", "sinfo.showRowCPU",
-            "sinfo.showRowMemory", "sinfo.showRowStackCounts",
-            "sinfo.showDetailMetrics", "sinfo.showDetailCharts", "sinfo.showDetailInspect",
-            "sinfo.showHistoryEvents", "sinfo.showPendingPackages",
-            "sinfo.showActivityLog", "sinfo.showCacheAction",
+            "serverfo.showHistoryTab", "serverfo.showUpdatesTab", "serverfo.showStatusPill",
+            "serverfo.showHost", "serverfo.showFooter", "serverfo.showMenuDot",
+            "serverfo.showRowImage", "serverfo.showRowUptime", "serverfo.showRowPorts",
+            "serverfo.showRowHealth", "serverfo.showRowRestarts", "serverfo.showRowCPU",
+            "serverfo.showRowMemory", "serverfo.showRowStackCounts",
+            "serverfo.showDetailMetrics", "serverfo.showDetailCharts", "serverfo.showDetailInspect",
+            "serverfo.showHistoryEvents", "serverfo.showPendingPackages",
+            "serverfo.showActivityLog", "serverfo.showCacheAction",
         ]
         for key in keys { UserDefaults.standard.set(true, forKey: key) }
         barBadge = false
@@ -391,7 +391,7 @@ struct SettingsView: View {
             }
             HStack(spacing: 8) {
                 Button("GitHub repository") {
-                    if let url = URL(string: "https://github.com/Dhivyadhanush/s-info") {
+                    if let url = URL(string: "https://github.com/Dhivyadhanush/server-fo") {
                         NSWorkspace.shared.open(url)
                     }
                 }
@@ -401,12 +401,12 @@ struct SettingsView: View {
                 }
                 .controlSize(.small)
                 Spacer()
-                Button("Quit S-Info") {
+                Button("Quit Server-Fo") {
                     NSApp.terminate(nil)
                 }
                 .controlSize(.small)
             }
-            Text("S-Info is a menu bar viewer for one server over SSH. It shows per-application usage, not host CPU, memory or network totals — the dynamic island already tracks those.")
+            Text("Server-Fo is a menu bar viewer for one server over SSH. It shows per-application usage, not host CPU, memory or network totals — the dynamic island already tracks those.")
                 .font(.system(size: 8.5))
                 .foregroundStyle(.tertiary)
                 .fixedSize(horizontal: false, vertical: true)
