@@ -4,6 +4,26 @@ All notable changes to S-Info. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases use
 [Semantic Versioning](https://semver.org/).
 
+## [1.0.1] — 2026-11-10
+
+### Added
+
+- A Quit button in the panel header and in Settings → About.
+
+### Fixed
+
+- Quitting while `apt upgrade` is running is now blocked with an explanation,
+  so a stray Cmd-Q cannot interrupt dpkg mid-transaction.
+- The settings sheet is tall enough to show the maintenance card without
+  scrolling past a cut-off card.
+
+### Changed
+
+- The Homebrew cask uses the current DSL (`depends_on macos: :sonoma`) and drops
+  the deprecated `postflight`; Homebrew installs are not quarantined anyway.
+- Install docs mention `brew trust`, which Homebrew requires before loading a
+  third-party cask.
+
 ## [1.0.0] — 2026-11-10
 
 First release.

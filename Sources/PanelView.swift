@@ -121,6 +121,14 @@ struct PanelView: View {
             }
             .buttonStyle(.borderless)
             .help("Settings")
+
+            Button {
+                NSApp.terminate(nil)
+            } label: {
+                Image(systemName: "power").font(.system(size: 11, weight: .medium))
+            }
+            .buttonStyle(.borderless)
+            .help("Quit S-Info")
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)

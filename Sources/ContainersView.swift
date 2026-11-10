@@ -303,15 +303,6 @@ struct ContainersView: View {
         }
     }
 
-    private func metric(_ container: Container?) -> Double {
-        guard let container else { return 0 }
-        switch sort {
-        case .cpu: return container.cpu
-        case .memory: return Double(container.memUsed)
-        case .restarts: return Double(container.restarts)
-        case .name: return 0
-        }
-    }
 }
 
 // MARK: - Container detail

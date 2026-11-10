@@ -164,7 +164,7 @@ plugin, so `build.sh` locates `libSwiftUIMacros.dylib` in the active Xcode
 toolchain and passes `-plugin-path` when needed. Build a universal app with:
 
 ```shell
-ARCHS="arm64 x86_64" VERSION=1.0.0 ./build.sh
+ARCHS="arm64 x86_64" VERSION=1.0.1 ./build.sh
 ```
 
 Layout:

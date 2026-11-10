@@ -1,21 +1,15 @@
-# S-Info 1.0.0
+# S-Info 1.0.1
 
-A menu bar app for one server: Docker containers, per-application usage, a
-30-day history, and a logged `apt` upgrade every 30 days.
+Safety and polish for the menu bar server monitor.
 
-## Highlights
+## Changes
 
-- **Per-application detail, not host totals.** CPU, memory, network, block I/O,
-  PIDs, restarts, ports, compose metadata, mounts and recent logs — for every
-  container. Host CPU/RAM/network stay in the dynamic island.
-- **30-day history.** A sample every 5 minutes plus start/stop/restart/health
-  events, stored locally and deleted automatically once it is older than a
-  month.
-- **Scheduled maintenance.** Runs exactly `sudo apt update && sudo apt upgrade -y`
-  every 30 days (on by default), streams the output live, stores the log, and
-  retries after 24 hours if it fails. No reboot, no dist-upgrade, no autoremove.
-- **Native and small.** SwiftUI menu bar app, one SSH round trip per refresh,
-  no daemon and no stored credentials.
+- **A real Quit button** in the panel header and in Settings → About.
+- **Quitting is blocked while apt is running.** S-Info shows a warning and keeps
+  the app alive rather than letting Cmd-Q interrupt dpkg mid-transaction.
+- The settings sheet is slightly taller, so the maintenance card is fully
+  visible.
+- The Homebrew cask now uses the current DSL and documents `brew trust`.
 
 ## Install
 
@@ -26,23 +20,19 @@ brew install --cask s-info
 open /Applications/S-Info.app
 ```
 
-Then open Settings and point it at your server (default
-`server1@192.168.1.22`), test the connection, and enable **Launch at login**.
+Upgrading from 1.0.0:
 
-## Requirements
+```shell
+brew upgrade --cask s-info
+```
 
-- macOS 14 or newer.
-- SSH key access; the app runs `/usr/bin/ssh` in batch mode.
-- Passwordless sudo for the upgrade feature (viewing works without it).
+Then open Settings and point it at your server, test the connection, and enable
+**Launch at login**.
 
 ## Notes
 
-- Ad-hoc signed, not notarised. Homebrew installs are not quarantined; manual downloads need one `xattr` command (see README).
-- The app must be running for background sampling and the 30-day schedule; the
-  login item is recommended.
-- If the Mac is asleep when an upgrade is due, it runs at the first refresh
-  after wake.
-
-## Checksums
-
-`S-Info.zip` SHA-256: see the `.sha256` asset attached to this release.
+- macOS 14+, key-based SSH, passwordless sudo for the upgrade feature.
+- Ad-hoc signed, not notarised. Homebrew installs are not quarantined; manual
+  downloads need one `xattr` command (see README).
+- Host CPU, memory and network totals remain intentionally out of scope; S-Info
+  shows per-application usage only.

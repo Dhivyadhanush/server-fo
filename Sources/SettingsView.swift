@@ -50,7 +50,7 @@ struct SettingsView: View {
                 .padding(14)
             }
         }
-        .frame(width: 470, height: 590)
+        .frame(width: 470, height: 620)
         .onDisappear { store.applySettings() }
     }
 
@@ -248,6 +248,10 @@ struct SettingsView: View {
                 }
                 .controlSize(.small)
                 Spacer()
+                Button("Quit S-Info") {
+                    NSApp.terminate(nil)
+                }
+                .controlSize(.small)
             }
             Text("S-Info is a menu bar viewer for one server over SSH. It shows per-application usage, not host CPU, memory or network totals — the dynamic island already tracks those.")
                 .font(.system(size: 8.5))

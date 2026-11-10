@@ -85,6 +85,7 @@ final class Store: ObservableObject {
     func start() {
         guard !started else { return }
         started = true
+        AppState.store = self
 
         let defaults = UserDefaults.standard
         if let raw = history.meta(Self.Keys.firstSeen), let epoch = Double(raw) {
