@@ -11,6 +11,13 @@ cask "s-info" do
 
   app "S-Info.app"
 
+  # Ad-hoc signed, so Gatekeeper cannot verify it. macOS 27 refuses to run a
+  # quarantined copy (the "Not Opened" dialog offers to move it to the Trash),
+  # so clear the download flag the same way --no-quarantine would.
+  postflight_steps do
+    run "/usr/bin/xattr", args: ["-dr", "com.apple.quarantine", "#{appdir}/S-Info.app"]
+  end
+
   uninstall quit: "dev.dhanuz.s-info"
 
   zap trash: [

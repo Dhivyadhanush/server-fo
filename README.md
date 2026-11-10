@@ -96,9 +96,11 @@ brew install --cask s-info
 open /Applications/S-Info.app
 ```
 
-The app signs itself ad-hoc, not notarised. Homebrew hands it to you without a
-quarantine flag, so it launches normally. For a manual download of the release
-zip, clear the flag once:
+The app signs itself ad-hoc, not notarised, so the cask clears the download
+quarantine flag after install. Without that, macOS 27 shows “S-Info.app Not
+Opened” and offers to move the app to the Trash. For a manual download of the
+release zip, clear the flag once (or use **System Settings → Privacy & Security
+→ Open Anyway**):
 
 ```shell
 xattr -dr com.apple.quarantine /Applications/S-Info.app
@@ -247,9 +249,10 @@ activity log.
 **History panel is empty.** History starts with the first sample. Click
 `--sample` or wait for the next 5-minute sample; the app must be running.
 
-**Gatekeeper says the app is damaged.** Clear quarantine with the `xattr`
-command above. That only happens to browser downloads; a Homebrew install is not
-quarantined.
+**“S-Info.app” Not Opened, or the app vanished after the dialog.** Gatekeeper
+moved the quarantined copy to the Trash. Reinstall with the current cask
+(`brew reinstall --cask s-info`), which clears quarantine, or run the `xattr`
+command above. Nothing is wrong with the app or your data.
 
 ## Releasing
 
