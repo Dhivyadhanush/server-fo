@@ -142,15 +142,15 @@ Then open **Settings** (gear icon) and check:
    **Settings → General** if you prefer.
 5. **Tailscale** — leave the globe toggle off on the LAN; enable it when remote.
 
-### Opening the window
+### Opening the panel
 
-The app starts in the menu bar, and it also shows a **Dock icon by default**.
-Click the Dock icon — or open Server-Fo again from Launchpad — to get a normal
-dashboard window with the same panel, including Settings. This matters when the
-menu bar is full and the server-rack icon is tucked away.
+Server-Fo is a **menu-bar app**: it has no main window. Click the server-rack
+icon in the menu bar to open the panel. If the menu bar is full and the icon is
+tucked into the overflow, use a menu-bar organizer (Align-MBar, Ice, Bartender)
+to pin it, or turn on **Settings → General → Show Dock icon** for an optional
+Dock-icon/dashboard fallback.
 
-Turn the Dock icon off in **Settings → General → Show Dock icon** if you want a
-pure menu-bar app.
+The Dock icon is **off by default**; the menu bar is the normal entry point.
 
 <img src="docs/panel-settings.png" width="420" alt="Settings">
 

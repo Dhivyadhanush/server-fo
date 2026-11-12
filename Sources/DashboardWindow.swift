@@ -7,8 +7,10 @@ import SwiftUI
 enum DockIcon {
     static let key = "serverfo.showDockIcon"
 
+    /// Menu bar only by default. The Dock icon is an optional fallback for a
+    /// very full menu bar, not the normal way to use the app.
     static var enabled: Bool {
-        UserDefaults.standard.object(forKey: key) as? Bool ?? true
+        UserDefaults.standard.object(forKey: key) as? Bool ?? false
     }
 
     static func apply() {

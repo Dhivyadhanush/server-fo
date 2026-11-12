@@ -1,23 +1,18 @@
-# Server-Fo 1.3.3
+# Server-Fo 1.3.4
 
-An always-available way to open the app.
+Menu bar first.
 
-## New
+## Changed
 
-- **Dock icon + dashboard window.** Click the Server-Fo Dock icon, open the app
-  again from Launchpad, or use **Settings → About → Open dashboard** to get the
-  full panel in a normal window.
-- This fixes the case where the menu-bar icon is hidden because the menu bar is
-  full: the app kept running but there was no visible way to open it.
-- **Settings → General → Show Dock icon** turns the Dock icon off if you prefer a
-  pure menu-bar app.
+- The app is back to being a **menu-bar app** with no main window. Click the
+  server-rack icon to open the panel.
+- The Dock icon and dashboard window are now **off by default**. They remain an
+  optional fallback in **Settings → General → Show Dock icon** for a very full
+  menu bar.
+- Reopening the app does not force a window unless that fallback is enabled.
 
-## Also included
-
-- Tailscale toggle: Mac → `pi@100.117.187.32` → `server1@192.168.1.22`.
-- Launch at login, with background work now starting from the app itself rather
-  than waiting for the menu-bar label.
-- 30-day history, scheduled apt upgrades, RAM cache clear, themed UI.
+Everything else from 1.3.3 is included: Tailscale routing, launch at login,
+30-day history, scheduled apt upgrades, RAM cache clear, and the adaptive theme.
 
 ## Upgrade
 
@@ -25,4 +20,5 @@ An always-available way to open the app.
 brew upgrade --cask server-fo
 ```
 
-Existing data and settings are preserved.
+If the menu-bar icon is hidden by overflow, pin Server-Fo with Align-MBar or
+turn on the optional Dock icon.

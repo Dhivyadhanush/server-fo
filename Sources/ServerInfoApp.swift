@@ -18,6 +18,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     /// already running. There is no main window otherwise, so this is the
     /// fallback when the menu bar icon is hidden.
     func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        guard DockIcon.enabled else { return false }
         showDashboard()
         return true
     }

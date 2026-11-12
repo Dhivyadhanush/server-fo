@@ -4,6 +4,16 @@ All notable changes to Server-Fo. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases use
 [Semantic Versioning](https://semver.org/).
 
+## [1.3.4] — 2026-11-12
+
+### Changed
+
+- The menu bar is the only normal entry point again. The optional Dock icon and
+  dashboard window are **off by default**; enable **Settings → General → Show
+  Dock icon** only if a full menu bar hides the status item.
+- Opening the app again no longer forces the dashboard window unless the Dock
+  fallback is enabled.
+
 ## [1.3.3] — 2026-11-12
 
 ### Added

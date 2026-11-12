@@ -17,7 +17,7 @@ struct SettingsView: View {
     @AppStorage("serverfo.checkUpdates") private var checkUpdates = true
     @AppStorage("serverfo.barBadge") private var barBadge = false
     @AppStorage("serverfo.appearance") private var appearance = "system"
-    @AppStorage("serverfo.showDockIcon") private var showDockIcon = true
+    @AppStorage("serverfo.showDockIcon") private var showDockIcon = false
 
     @AppStorage("serverfo.showHistoryTab") private var showHistoryTab = true
     @AppStorage("serverfo.showUpdatesTab") private var showUpdatesTab = true
@@ -450,7 +450,7 @@ struct SettingsView: View {
                         DockIcon.apply()
                     }
                 ),
-                note: "Click it to open the dashboard window when the menu bar is full."
+                note: "Off by default. Optional fallback: adds a Dock icon that opens a dashboard window."
             )
             toggleRow("Check GitHub for updates", isOn: $checkUpdates, note: "Once at launch, read-only.")
         }
@@ -478,10 +478,6 @@ struct SettingsView: View {
                 .controlSize(.small)
                 Button("Check now") {
                     Task { await store.checkForUpdates() }
-                }
-                .controlSize(.small)
-                Button("Open dashboard") {
-                    DashboardWindow.shared.show(store: store)
                 }
                 .controlSize(.small)
                 Spacer()

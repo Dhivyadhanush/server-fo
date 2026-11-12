@@ -5,7 +5,7 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 APP=".build/Server-Fo.app"
-VERSION="${VERSION:-1.3.3}"
+VERSION="${VERSION:-1.3.4}"
 BUILD="${BUILD:-1}"
 # ARCHS="arm64 x86_64" produces a universal binary; default is this machine.
 ARCHS="${ARCHS:-$(uname -m)}"
