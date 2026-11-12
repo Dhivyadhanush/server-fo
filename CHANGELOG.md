@@ -4,6 +4,14 @@ All notable changes to Server-Fo. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases use
 [Semantic Versioning](https://semver.org/).
 
+## [1.3.1] — 2026-11-12
+
+### Fixed
+
+- First-launch login-item setup no longer bootouts a LaunchAgent that is
+  already managing the running process, which could have restarted the app in a
+  loop. It now only creates the agent when none exists and records the choice.
+
 ## [1.3.0] — 2026-11-12
 
 ### Added

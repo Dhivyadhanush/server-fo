@@ -32,12 +32,18 @@ enum LoginItem {
         let key = "serverfo.loginItemConfigured"
         guard !defaults.bool(forKey: key),
               Bundle.main.bundlePath.hasPrefix("/Applications/") else { return }
-        do {
-            try set(true)
-            defaults.set(true, forKey: key)
-        } catch {
-            // Try again next launch; nothing else depends on this.
+
+        // If a LaunchAgent already exists, do not bootout/bootstrap it: the
+        // running process may itself be that job. Just remember the choice.
+        if !LoginItem.enabled {
+            do {
+                try set(true)
+            } catch {
+                // Try again next launch; nothing else depends on this.
+                return
+            }
         }
+        defaults.set(true, forKey: key)
     }
 
     static func set(_ on: Bool) throws {
