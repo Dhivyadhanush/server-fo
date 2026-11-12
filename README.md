@@ -142,6 +142,16 @@ Then open **Settings** (gear icon) and check:
    **Settings → General** if you prefer.
 5. **Tailscale** — leave the globe toggle off on the LAN; enable it when remote.
 
+### Opening the window
+
+The app starts in the menu bar, and it also shows a **Dock icon by default**.
+Click the Dock icon — or open Server-Fo again from Launchpad — to get a normal
+dashboard window with the same panel, including Settings. This matters when the
+menu bar is full and the server-rack icon is tucked away.
+
+Turn the Dock icon off in **Settings → General → Show Dock icon** if you want a
+pure menu-bar app.
+
 <img src="docs/panel-settings.png" width="420" alt="Settings">
 
 ## History and retention
@@ -235,7 +245,7 @@ plugin, so `build.sh` locates `libSwiftUIMacros.dylib` in the active Xcode
 toolchain and passes `-plugin-path` when needed. Build a universal app with:
 
 ```shell
-ARCHS="arm64 x86_64" VERSION=1.3.2 ./build.sh
+ARCHS="arm64 x86_64" VERSION=1.3.3 ./build.sh
 ```
 
 Layout:
@@ -289,8 +299,8 @@ command above. Nothing is wrong with the app or your data.
 
 ```shell
 # 1. bump the version in build.sh (default VERSION) and CHANGELOG.md
-git commit -am "release v1.3.2"
-git tag v1.3.2 && git push --tags
+git commit -am "release v1.3.3"
+git tag v1.3.3 && git push --tags
 
 # 2. the release workflow builds a universal zip and publishes the GitHub
 #    release with RELEASE_NOTES.md

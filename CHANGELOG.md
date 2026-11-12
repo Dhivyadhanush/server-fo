@@ -4,6 +4,16 @@ All notable changes to Server-Fo. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases use
 [Semantic Versioning](https://semver.org/).
 
+## [1.3.3] — 2026-11-12
+
+### Added
+
+- A Dock icon and a normal **dashboard window**. Clicking the Dock icon, opening
+  the app again from Launchpad, or choosing **Open dashboard** in Settings shows
+  the panel in a regular window. This is the fallback when the menu bar is full
+  and the status item is hidden.
+- Settings → General → **Show Dock icon** (on by default) controls it.
+
 ## [1.3.2] — 2026-11-12
 
 ### Fixed

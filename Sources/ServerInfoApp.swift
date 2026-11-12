@@ -10,6 +10,34 @@ enum AppState {
 
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_ notification: Notification) {
+        DockIcon.apply()
+    }
+
+    /// Dock icon click, Launchpad, or opening the app again while it is
+    /// already running. There is no main window otherwise, so this is the
+    /// fallback when the menu bar icon is hidden.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
+        showDashboard()
+        return true
+    }
+
+    func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
+        false
+    }
+
+    private func showDashboard() {
+        if let store = AppState.store {
+            DashboardWindow.shared.show(store: store)
+            return
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.8) {
+            if let store = AppState.store {
+                DashboardWindow.shared.show(store: store)
+            }
+        }
+    }
+
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
         guard AppState.store?.isUpgrading == true else { return .terminateNow }
         let alert = NSAlert()
