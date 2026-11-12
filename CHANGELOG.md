@@ -4,6 +4,17 @@ All notable changes to Server-Fo. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases use
 [Semantic Versioning](https://semver.org/).
 
+## [1.3.2] — 2026-11-12
+
+### Fixed
+
+- Background work now starts from the app itself, not only from the menu bar
+  label's `onAppear`. On a full menu bar, or before the status item is inserted,
+  that callback could be delayed indefinitely and leave the app running but
+  idle: no refresh, no samples, no scheduled upgrades.
+- The app records `lastLaunch` in its history metadata, which makes startup
+  diagnostics possible.
+
 ## [1.3.1] — 2026-11-12
 
 ### Fixed

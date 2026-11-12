@@ -235,7 +235,7 @@ plugin, so `build.sh` locates `libSwiftUIMacros.dylib` in the active Xcode
 toolchain and passes `-plugin-path` when needed. Build a universal app with:
 
 ```shell
-ARCHS="arm64 x86_64" VERSION=1.3.1 ./build.sh
+ARCHS="arm64 x86_64" VERSION=1.3.2 ./build.sh
 ```
 
 Layout:
@@ -289,8 +289,8 @@ command above. Nothing is wrong with the app or your data.
 
 ```shell
 # 1. bump the version in build.sh (default VERSION) and CHANGELOG.md
-git commit -am "release v1.3.1"
-git tag v1.3.1 && git push --tags
+git commit -am "release v1.3.2"
+git tag v1.3.2 && git push --tags
 
 # 2. the release workflow builds a universal zip and publishes the GitHub
 #    release with RELEASE_NOTES.md

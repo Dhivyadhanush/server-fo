@@ -24,10 +24,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
 
 @main
 struct ServerInfoApp: App {
-    @StateObject private var store = Store()
+    @StateObject private var store: Store
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var appDelegate
 
     init() {
+        let store = Store()
+        _store = StateObject(wrappedValue: store)
+
         // Headless modes exist for testing, launch agents and support. They
         // run before any UI is created and exit on their own.
         Headless.handleIfRequested()
@@ -39,6 +42,13 @@ struct ServerInfoApp: App {
         AppearanceMode.applyCurrent()
         LoginItem.repair()
         LoginItem.configureOnFirstLaunch()
+
+        // Do not depend on the menu bar label being instantiated: on a full
+        // menu bar (or before the status item is inserted) onAppear can be
+        // delayed indefinitely, leaving the app alive but idle.
+        Task { @MainActor in
+            store.start()
+        }
     }
 
     var body: some Scene {

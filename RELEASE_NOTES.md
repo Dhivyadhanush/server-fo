@@ -1,27 +1,24 @@
-# Server-Fo 1.3.1
+# Server-Fo 1.3.2
 
-Tailscale routing, launch-at-login, and a login-item setup fix.
+Tailscale routing, launch at login, and a startup reliability fix.
+
+## Start at login, reliably
+
+- The background store now starts from the app itself. Previously it waited for
+  the menu-bar label's `onAppear`, which can be delayed indefinitely when the
+  menu bar is full — the app stayed alive but never refreshed or sampled.
+- Installed copies still add themselves as a login item on first launch.
+- Turn launch at login off in **Settings → General**.
 
 ## Tailscale
 
-- A **Tailscale toggle** in the panel header (globe icon) and in
-  **Settings → Connection**.
-- When enabled: Mac → Raspberry Pi over Tailscale (`pi@100.117.187.32`) → Pi
-  forwards the SSH session to `server1@192.168.1.22` on its LAN.
-- The Pi's tailnet IPv4 is discovered from `tailscale status --json`, saved as
-  the jump host, and shown in Settings and the footer. The saved address is the
-  fallback if discovery fails.
-- The jump only forwards TCP; the Mac authenticates directly to server1, so the
-  Pi does not need a key for server1.
-- Requires the Tailscale app running on the Mac and the Pi online. Key-based SSH
-  to the Pi is required.
-
-## Open at login
-
-- An installed copy registers itself as a login item on first launch.
-- Turn it off in **Settings → General**; it stays off.
-- 1.3.1 fixes first-launch setup so it never boots out a LaunchAgent that is
-  already running the app.
+- Globe toggle in the header and **Settings → Connection**.
+- Mac → Raspberry Pi over Tailscale (`pi@100.117.187.32`) → Pi forwards SSH to
+  `server1@192.168.1.22` on its LAN.
+- The Pi's tailnet IP is discovered from `tailscale status --json`, saved as the
+  jump host, and shown in Settings and the footer.
+- This is what to use on a hotspot or away from the server's LAN; the direct LAN
+  route stays available with the toggle off.
 
 ## Upgrade
 
@@ -29,8 +26,8 @@ Tailscale routing, launch-at-login, and a login-item setup fix.
 brew upgrade --cask server-fo
 ```
 
-Existing Server-Fo 1.2.0 history and settings are preserved. The Tailscale
-toggle is off by default.
+Existing history and settings are preserved. The current network is a hotspot,
+so leave **Tailscale on** for this Mac.
 
 ## CLI
 

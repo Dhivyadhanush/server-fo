@@ -94,6 +94,7 @@ final class Store: ObservableObject {
         guard !started else { return }
         started = true
         AppState.store = self
+        history.setMeta("lastLaunch", String(Date().timeIntervalSince1970))
 
         let defaults = UserDefaults.standard
         if let raw = history.meta(Self.Keys.firstSeen), let epoch = Double(raw) {
