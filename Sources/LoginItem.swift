@@ -25,6 +25,21 @@ enum LoginItem {
         try? set(true)
     }
 
+    /// Installed copies enable the login item on first launch. A user who
+    /// turns it off in Settings keeps it off because the flag stays set.
+    static func configureOnFirstLaunch() {
+        let defaults = UserDefaults.standard
+        let key = "serverfo.loginItemConfigured"
+        guard !defaults.bool(forKey: key),
+              Bundle.main.bundlePath.hasPrefix("/Applications/") else { return }
+        do {
+            try set(true)
+            defaults.set(true, forKey: key)
+        } catch {
+            // Try again next launch; nothing else depends on this.
+        }
+    }
+
     static func set(_ on: Bool) throws {
         if on {
             launchctl(["bootout", "gui/\(getuid())/\(label)"])
@@ -32,7 +47,7 @@ enum LoginItem {
                 "Label": label,
                 "ProgramArguments": [Bundle.main.executableURL?.path ?? CommandLine.arguments[0]],
                 "RunAtLoad": true,
-                "KeepAlive": false,
+                "KeepAlive": ["SuccessfulExit": false],
                 "LimitLoadToSessionType": "Aqua",
             ]
             let data = try PropertyListSerialization.data(

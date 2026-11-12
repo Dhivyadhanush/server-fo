@@ -1,40 +1,41 @@
-# Server-Fo 1.2.0
+# Server-Fo 1.3.0
 
-The app formerly known as **S-Info** is now **Server-Fo**.
+Tailscale routing and launch-at-login.
 
-## Rename
+## Tailscale
 
-- New app: `Server-Fo.app`, bundle `dev.dhanuz.server-fo`, executable
-  `ServerInfo`.
-- New Homebrew cask: **`server-fo`**. The old `s-info` cask is retired.
-- New data location: `~/Library/Application Support/Server-Fo`.
-- This is a clean break — a fresh history database and fresh preferences. Old
-  S-Info data is not migrated.
+- A **Tailscale toggle** now sits in the panel header (globe icon) and in
+  **Settings → Connection**.
+- When enabled: Mac → Raspberry Pi over Tailscale (`pi@100.117.187.32`) → Pi
+  forwards the SSH session to `server1@192.168.1.22` on its LAN.
+- The Pi's tailnet IPv4 is discovered from `tailscale status --json`, saved as
+  the jump host, and shown in Settings and the footer. The saved address is the
+  fallback if discovery fails.
+- The jump only forwards TCP; the Mac still authenticates directly to server1,
+  so the Pi does not need a key for server1.
+- Requires the Tailscale app running on the Mac and the Pi online. Key-based SSH
+  to the Pi is still required.
 
-## Install
+## Open at login
+
+- An installed copy registers itself as a login item on first launch, so the
+  menu bar app is there when you log in.
+- Turn it off in **Settings → General**; it stays off.
+- If the app crashes, launchd restarts it. A manual **Quit** stays quit.
+
+## Upgrade
 
 ```shell
-brew tap Dhivyadhanush/tap
-brew trust Dhivyadhanush/tap
-brew install --cask server-fo
-open /Applications/Server-Fo.app
+brew upgrade --cask server-fo
 ```
 
-If S-Info is already installed, remove it first so there is only one app:
+Your existing Server-Fo 1.2.0 history and settings are preserved. The Tailscale
+toggle is off by default.
+
+## New CLI
 
 ```shell
-brew uninstall --cask --zap s-info
-brew install --cask server-fo
+ServerInfo --tailscale on|off
+ServerInfo --tailscale-ip
+ServerInfo --route
 ```
-
-## Same features
-
-Docker containers grouped by stack, per-application CPU/memory/network/I/O,
-mounts and logs on demand, 30-day local history, a scheduled
-`sudo apt update && sudo apt upgrade -y` every 30 days, a RAM cache clear, the
-adaptive light/dark theme, and the visibility controls.
-
-No Apple developer account is involved. The cask clears the download quarantine
-flag so the ad-hoc-signed app opens normally on macOS 27.
-
-macOS 14+, key-based SSH, passwordless sudo for the maintenance actions.

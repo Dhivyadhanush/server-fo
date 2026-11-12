@@ -33,6 +33,12 @@ enum Headless {
             settingsSnapshot(arguments.dropFirst().first)
         case "--prune":
             prune()
+        case "--tailscale":
+            tailscale(arguments.dropFirst().first)
+        case "--tailscale-ip":
+            tailscaleIP()
+        case "--route":
+            route()
         case "--clear-cache":
             clearCache()
         case "--upgrade":
@@ -267,6 +273,37 @@ enum Headless {
             defer { lock.unlock() }
             return lines.joined(separator: "\n")
         }
+    }
+
+    private static func tailscale(_ value: String?) -> Never {
+        guard let value, value == "on" || value == "off" else {
+            print("usage: ServerInfo --tailscale on|off")
+            exit(2)
+        }
+        UserDefaults.standard.set(value == "on", forKey: SSHConfig.Keys.useTailscale)
+        let config = SSHConfig.current()
+        print("tailscale \(value) · \(config.label)")
+        exit(0)
+    }
+
+    private static func tailscaleIP() -> Never {
+        runAndExit {
+            if let ip = await Tailscale.piIP() {
+                print(ip)
+                return 0
+            }
+            print("could not find the Pi on the tailnet")
+            return 1
+        }
+    }
+
+    private static func route() -> Never {
+        let config = SSHConfig.current()
+        print("server:    \(config.destination):\(config.port)")
+        print("tailscale: \(config.useTailscale ? "on" : "off")")
+        print("jump:      \(config.jumpDestination ?? "direct")")
+        print("route:     \(config.label)")
+        exit(0)
     }
 
     private static func clearCache() -> Never {

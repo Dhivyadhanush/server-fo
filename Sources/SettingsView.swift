@@ -9,6 +9,8 @@ struct SettingsView: View {
     @AppStorage("serverfo.ssh.user") private var user = "server1"
     @AppStorage("serverfo.ssh.port") private var port = 22
     @AppStorage("serverfo.ssh.identity") private var identity = ""
+    @AppStorage("serverfo.tailscale.host") private var tailscaleHost = "100.117.187.32"
+    @AppStorage("serverfo.tailscale.user") private var tailscaleUser = "pi"
     @AppStorage("serverfo.refresh") private var refresh = 30
     @AppStorage("serverfo.sample") private var sample = 5
     @AppStorage("serverfo.autoUpgrade") private var autoUpgrade = true
@@ -43,6 +45,8 @@ struct SettingsView: View {
     @State private var testResult: String?
     @State private var testOK = false
     @State private var pruneMessage: String?
+    @State private var detectingPi = false
+    @State private var piMessage: String?
 
     var body: some View {
         ZStack {
@@ -53,8 +57,8 @@ struct SettingsView: View {
                 ScrollView(showsIndicators: false) {
                     VStack(alignment: .leading, spacing: 11) {
                         appearanceCard
-                        visibilityCard
                         connectionCard
+                        visibilityCard
                         refreshCard
                         historyCard
                         maintenanceCard
@@ -223,6 +227,70 @@ struct SettingsView: View {
                 Spacer()
             }
             field("Identity", text: $identity, placeholder: "~/.ssh/id_ed25519 (optional)")
+
+            Divider().opacity(0.35)
+
+            HStack(alignment: .top, spacing: 10) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Route via Tailscale")
+                        .font(.system(size: 10.5, weight: .medium))
+                    Text("Mac → Raspberry Pi over Tailscale → server1 on the Pi's LAN.")
+                        .font(.system(size: 8.5))
+                        .foregroundStyle(.tertiary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                Spacer(minLength: 8)
+                Toggle("", isOn: Binding(
+                    get: { store.tailscaleEnabled },
+                    set: { store.setTailscale($0) }
+                ))
+                .toggleStyle(.switch)
+                .tint(Theme.accentText)
+                .controlSize(.mini)
+                .labelsHidden()
+            }
+
+            if store.tailscaleEnabled {
+                field("Pi host", text: $tailscaleHost, placeholder: "100.117.187.32")
+                field("Pi user", text: $tailscaleUser, placeholder: "pi")
+
+                HStack(spacing: 8) {
+                    Button {
+                        detectingPi = true
+                        piMessage = nil
+                        Task {
+                            let ip = await store.refreshTailscaleIP()
+                            piMessage = ip.map { "Pi at \($0)" }
+                                ?? "Tailscale peer not found; using \(tailscaleHost)"
+                            detectingPi = false
+                            store.refresh()
+                        }
+                    } label: {
+                        HStack(spacing: 4) {
+                            if detectingPi { ProgressView().controlSize(.mini) }
+                            Text(detectingPi ? "Detecting…" : "Detect Pi IP")
+                                .font(.system(size: 10))
+                        }
+                    }
+                    .buttonStyle(.bordered)
+                    .tint(Theme.violetText)
+                    .controlSize(.small)
+                    .disabled(detectingPi)
+
+                    if let piMessage {
+                        Text(piMessage)
+                            .font(.system(size: 9, design: .monospaced))
+                            .foregroundStyle(piMessage.hasPrefix("Pi at") ? Theme.green : Theme.amber)
+                            .lineLimit(1)
+                    }
+                    Spacer()
+                }
+
+                Text("Route: \(SSHConfig.current().label)")
+                    .font(.system(size: 8.5, design: .monospaced))
+                    .foregroundStyle(.tertiary)
+                    .lineLimit(1)
+            }
 
             HStack(spacing: 8) {
                 Button {

@@ -8,11 +8,20 @@ struct SSHConfig {
     var port: Int
     var identity: String
 
+    /// When enabled, the Mac reaches the Pi over Tailscale and the Pi reaches
+    /// server1 on its LAN. The final destination stays host/user/port.
+    var useTailscale: Bool = false
+    var jumpHost: String = "100.117.187.32"
+    var jumpUser: String = "pi"
+
     enum Keys {
         static let host = "serverfo.ssh.host"
         static let user = "serverfo.ssh.user"
         static let port = "serverfo.ssh.port"
         static let identity = "serverfo.ssh.identity"
+        static let useTailscale = "serverfo.tailscale.enabled"
+        static let jumpHost = "serverfo.tailscale.host"
+        static let jumpUser = "serverfo.tailscale.user"
     }
 
     static func current() -> SSHConfig {
@@ -21,7 +30,10 @@ struct SSHConfig {
             host: defaults.string(forKey: Keys.host) ?? "192.168.1.22",
             user: defaults.string(forKey: Keys.user) ?? "server1",
             port: defaults.integer(forKey: Keys.port) == 0 ? 22 : defaults.integer(forKey: Keys.port),
-            identity: defaults.string(forKey: Keys.identity) ?? ""
+            identity: defaults.string(forKey: Keys.identity) ?? "",
+            useTailscale: defaults.object(forKey: Keys.useTailscale) as? Bool ?? false,
+            jumpHost: defaults.string(forKey: Keys.jumpHost) ?? "100.117.187.32",
+            jumpUser: defaults.string(forKey: Keys.jumpUser) ?? "pi"
         )
     }
 
@@ -29,12 +41,26 @@ struct SSHConfig {
         user.isEmpty ? host : "\(user)@\(host)"
     }
 
+    var jumpDestination: String? {
+        guard useTailscale else { return nil }
+        let host = jumpHost.trimmingCharacters(in: .whitespaces)
+        guard !host.isEmpty else { return nil }
+        let user = jumpUser.trimmingCharacters(in: .whitespaces)
+        return user.isEmpty ? host : "\(user)@\(host)"
+    }
+
     var isValid: Bool {
-        !host.trimmingCharacters(in: .whitespaces).isEmpty
+        let server = host.trimmingCharacters(in: .whitespaces)
+        guard !server.isEmpty else { return false }
+        if useTailscale { return jumpDestination != nil }
+        return true
     }
 
     var label: String {
-        "\(destination):\(port)"
+        if let jumpDestination {
+            return "\(destination) via \(jumpDestination)"
+        }
+        return "\(destination):\(port)"
     }
 }
 
@@ -193,6 +219,9 @@ enum SSH {
         let identity = config.identity.trimmingCharacters(in: .whitespaces)
         if !identity.isEmpty {
             args += ["-i", (identity as NSString).expandingTildeInPath]
+        }
+        if let jump = config.jumpDestination {
+            args += ["-J", jump]
         }
         return args
     }

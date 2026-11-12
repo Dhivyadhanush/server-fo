@@ -41,6 +41,9 @@ final class Store: ObservableObject {
     @Published private(set) var cacheExit: Int?
     @Published private(set) var lastCacheClear: Date?
 
+    @Published private(set) var tailscaleEnabled = false
+    @Published private(set) var tailscalePiIP: String?
+
     @Published var latestVersion: String?
 
     let history = HistoryStore()
@@ -113,9 +116,21 @@ final class Store: ObservableObject {
         history.prune()
         lastSampleAt = history.latestSampleDate() ?? .distantPast
 
+        tailscaleEnabled = SSHConfig.current().useTailscale
+        tailscalePiIP = UserDefaults.standard.string(forKey: SSHConfig.Keys.jumpHost)
+
         scheduleTimer()
         reloadHistory()
         refresh()
+
+        if tailscaleEnabled {
+            Task {
+                let before = SSHConfig.current().jumpHost
+                if let ip = await refreshTailscaleIP(), ip != before {
+                    refresh()
+                }
+            }
+        }
 
         // @AppStorage shows this as ON by default, so an absent key must mean
         // ON here too; bool(forKey:) would report false.
@@ -284,6 +299,33 @@ final class Store: ObservableObject {
             reloadHistory()
             refresh()
         }
+    }
+
+    // MARK: Tailscale
+
+    /// Turning the toggle on asks Tailscale for the Pi's current tailnet
+    /// address, saves it as the jump host, then reconnects through it.
+    func setTailscale(_ enabled: Bool) {
+        guard enabled != tailscaleEnabled else { return }
+        UserDefaults.standard.set(enabled, forKey: SSHConfig.Keys.useTailscale)
+        tailscaleEnabled = enabled
+
+        if enabled {
+            Task {
+                _ = await refreshTailscaleIP()
+                refresh()
+            }
+        } else {
+            refresh()
+        }
+    }
+
+    @discardableResult
+    func refreshTailscaleIP() async -> String? {
+        guard let ip = await Tailscale.piIP() else { return nil }
+        UserDefaults.standard.set(ip, forKey: SSHConfig.Keys.jumpHost)
+        tailscalePiIP = ip
+        return ip
     }
 
     // MARK: RAM cache

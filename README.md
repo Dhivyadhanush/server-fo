@@ -90,6 +90,29 @@ New host keys are accepted on first connection
 (`StrictHostKeyChecking=accept-new`). Everything runs over one SSH round trip per
 refresh, with connection multiplexing kept in `/tmp` for speed.
 
+## Tailscale
+
+A globe toggle in the panel header — and the same switch in **Settings →
+Connection** — routes the SSH session through Tailscale when you are away from
+the server's LAN:
+
+```
+Mac  →  pi@100.117.187.32 (Tailscale)  →  server1@192.168.1.22 (LAN)
+```
+
+- The Pi only forwards TCP. The Mac still authenticates directly to `server1`,
+  so the Pi does not need its own key for the server.
+- On enable, Server-Fo reads `tailscale status --json` to find the Raspberry
+  Pi's current IPv4 tailnet address and saves it as the jump host. The saved
+  address is used if discovery fails (default `100.117.187.32`).
+- The route appears in Settings and as `via Tailscale` in the panel footer. The
+  detected IP can be refreshed with **Detect Pi IP**.
+- Leave it off on the server's LAN; turn it on from anywhere Tailscale reaches
+  the Pi. Key-based SSH to the Pi and the Tailscale app running on the Mac are
+  required.
+
+<img src="docs/panel-tailscale.png" width="420" alt="Tailscale route active">
+
 ## Install
 
 ```shell
@@ -114,8 +137,10 @@ Then open **Settings** (gear icon) and check:
 1. **Host / User / Port** — defaults to `server1@192.168.1.22:22`.
 2. **Identity** — leave empty to use your SSH config/agent, or point at a key.
 3. **Test connection** — should print `ok <hostname> <kernel>`.
-4. **Launch at login** — recommended, so sampling and the 30-day schedule run
-   without you opening the panel.
+4. **Launch at login** — installed copies add themselves on first launch, so
+   sampling and the 30-day schedule are ready when you log in. Turn it off in
+   **Settings → General** if you prefer.
+5. **Tailscale** — leave the globe toggle off on the LAN; enable it when remote.
 
 <img src="docs/panel-settings.png" width="420" alt="Settings">
 
@@ -177,6 +202,9 @@ $S --upgrade           # run apt update && apt upgrade -y now, headless
 $S --upgrade-if-due    # run only if the 30-day timer says so
 $S --clear-cache       # sync and drop the Linux page cache now, headless
 $S --update            # check GitHub for a newer release
+$S --tailscale on|off  # route through the Pi's Tailscale address, or direct
+$S --tailscale-ip      # print the detected Pi tailnet IP
+$S --route             # print the active server/jump route
 $S --loginitem on|off  # manage the LaunchAgent
 $S --selftest          # parser, byte units, schedule and retention tests
 ```
@@ -207,7 +235,7 @@ plugin, so `build.sh` locates `libSwiftUIMacros.dylib` in the active Xcode
 toolchain and passes `-plugin-path` when needed. Build a universal app with:
 
 ```shell
-ARCHS="arm64 x86_64" VERSION=1.2.0 ./build.sh
+ARCHS="arm64 x86_64" VERSION=1.3.0 ./build.sh
 ```
 
 Layout:
@@ -261,8 +289,8 @@ command above. Nothing is wrong with the app or your data.
 
 ```shell
 # 1. bump the version in build.sh (default VERSION) and CHANGELOG.md
-git commit -am "release v1.2.0"
-git tag v1.2.0 && git push --tags
+git commit -am "release v1.3.0"
+git tag v1.3.0 && git push --tags
 
 # 2. the release workflow builds a universal zip and publishes the GitHub
 #    release with RELEASE_NOTES.md

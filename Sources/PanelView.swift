@@ -125,6 +125,16 @@ struct PanelView: View {
             if showStatusPill { statusPill }
 
             GlassIconButton(
+                icon: "network",
+                help: store.tailscaleEnabled
+                    ? "Tailscale via \(store.tailscalePiIP ?? SSHConfig.current().jumpHost) · click for direct LAN"
+                    : "Route through Tailscale (Pi \(SSHConfig.current().jumpHost))",
+                active: store.tailscaleEnabled
+            ) {
+                store.setTailscale(!store.tailscaleEnabled)
+            }
+
+            GlassIconButton(
                 icon: "arrow.clockwise",
                 help: "Refresh now",
                 spinning: store.isRefreshing
@@ -274,6 +284,12 @@ struct PanelView: View {
                 Text("Updated \(Fmt.relative(store.lastUpdated))")
             }
             Spacer(minLength: 8)
+            if store.tailscaleEnabled {
+                Text("via Tailscale")
+                    .foregroundStyle(Theme.accentText)
+                    .help("Via Tailscale \(store.tailscalePiIP ?? SSHConfig.current().jumpHost)")
+                Text("·")
+            }
             if let probe = store.probe {
                 Text("\(probe.running) running")
                 if probe.stopped > 0 { Text("· \(probe.stopped) stopped") }

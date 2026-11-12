@@ -38,6 +38,7 @@ struct ServerInfoApp: App {
 
         AppearanceMode.applyCurrent()
         LoginItem.repair()
+        LoginItem.configureOnFirstLaunch()
     }
 
     var body: some Scene {

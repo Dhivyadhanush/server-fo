@@ -4,6 +4,27 @@ All notable changes to Server-Fo. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases use
 [Semantic Versioning](https://semver.org/).
 
+## [1.3.0] — 2026-11-12
+
+### Added
+
+- **Tailscale jump-host toggle** in the panel header and Settings → Connection.
+  When on, the Mac connects to the Raspberry Pi over Tailscale
+  (`pi@100.117.187.32`) and the Pi forwards the SSH session to
+  `server1@192.168.1.22` on its LAN.
+- Tailscale peer discovery: the Pi's current IPv4 tailnet address is read from
+  `tailscale status --json`, saved as the jump host, and shown in Settings and
+  the footer. The saved address is the fallback when discovery is unavailable.
+- `--tailscale on|off`, `--tailscale-ip` and `--route` headless commands.
+- Installed copies add themselves as a login item on first launch. Turning it
+  off in Settings keeps it off.
+- `KeepAlive` now restarts the app after a crash, but not after a manual Quit.
+
+### Changed
+
+- Settings order now puts Connection above the long visibility list.
+- The footer shows `via Tailscale` while the jump route is active.
+
 ## [1.2.0] — 2026-11-10
 
 ### Changed
