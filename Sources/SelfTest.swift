@@ -242,10 +242,11 @@ enum Headless {
             store.start()
             await waitForProbe(store)
             let root = ZStack {
-                AppBackground()
+                Color(nsColor: .windowBackgroundColor)
                 SettingsView(store: store)
             }
-            exit(await render(root, to: destination) ? 0 : 1)
+            .frame(width: 490, height: 640)
+            exit(await render(root, to: destination, size: CGSize(width: 490, height: 640)) ? 0 : 1)
         }
         RunLoop.main.run()
         exit(1)

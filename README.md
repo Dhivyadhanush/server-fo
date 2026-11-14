@@ -126,6 +126,9 @@ Mac  →  pi@100.117.187.32 (Tailscale)  →  server1@192.168.1.22 (LAN)
 - Leave it off on the server's LAN; turn it on from anywhere Tailscale reaches
   the Pi. Key-based SSH to the Pi and the Tailscale app running on the Mac are
   required.
+- In Settings, only the address for the **active route** is editable: with
+  Tailscale on, the Tailscale IP is editable and the server host is read-only;
+  with it off, the reverse. Toggle the route to edit the other one.
 
 <img src="docs/panel-tailscale.png" width="420" alt="Tailscale route active">
 

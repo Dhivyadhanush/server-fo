@@ -11,13 +11,13 @@ struct SettingsView: View {
     @AppStorage("serverfo.ssh.identity") private var identity = ""
     @AppStorage("serverfo.tailscale.host") private var tailscaleHost = "100.117.187.32"
     @AppStorage("serverfo.tailscale.user") private var tailscaleUser = "pi"
+
     @AppStorage("serverfo.refresh") private var refresh = 30
     @AppStorage("serverfo.sample") private var sample = 5
     @AppStorage("serverfo.autoUpgrade") private var autoUpgrade = true
     @AppStorage("serverfo.checkUpdates") private var checkUpdates = true
-    @AppStorage("serverfo.appearance") private var appearance = "system"
     @AppStorage("serverfo.showDockIcon") private var showDockIcon = false
-    @ObservedObject private var widget = ServerWidgetController.shared
+    @AppStorage("serverfo.appearance") private var appearance = "system"
 
     @AppStorage("serverfo.showHistoryTab") private var showHistoryTab = true
     @AppStorage("serverfo.showUpdatesTab") private var showUpdatesTab = true
@@ -40,256 +40,107 @@ struct SettingsView: View {
     @AppStorage("serverfo.showActivityLog") private var showActivityLog = true
     @AppStorage("serverfo.showCacheAction") private var showCacheAction = true
 
+    @ObservedObject private var widget = ServerWidgetController.shared
+
     @State private var loginItem = LoginItem.enabled
     @State private var testing = false
     @State private var testResult: String?
     @State private var testOK = false
-    @State private var pruneMessage: String?
     @State private var detectingPi = false
     @State private var piMessage: String?
+    @State private var pruneMessage: String?
 
     var body: some View {
-        ZStack {
-            AppBackground()
-
-            VStack(spacing: 0) {
-                header
-                ScrollView(showsIndicators: false) {
-                    VStack(alignment: .leading, spacing: 11) {
-                        appearanceCard
-                        connectionCard
-                        visibilityCard
-                        refreshCard
-                        historyCard
-                        maintenanceCard
-                        generalCard
-                        aboutCard
-                    }
-                    .padding(14)
+        VStack(spacing: 0) {
+            HStack {
+                Text("Server-Fo Settings")
+                    .font(.headline)
+                Spacer()
+                Button("Done") {
+                    store.applySettings()
+                    dismiss()
                 }
+                .keyboardShortcut(.defaultAction)
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 11)
+
+            Divider()
+
+            Form {
+                connectionSection
+                appearanceSection
+                refreshSection
+                historySection
+                maintenanceSection
+                visibilitySections
+                generalSection
+                aboutSection
+            }
+            .formStyle(.grouped)
         }
-        .frame(width: 470, height: 620)
+        .frame(width: 490, height: 640)
         .onChange(of: appearance) { _, value in AppearanceMode.apply(value) }
         .onDisappear { store.applySettings() }
     }
 
-    private var header: some View {
-        HStack(spacing: 10) {
-            if let icon = AppAssets.appIcon {
-                Image(nsImage: icon)
-                    .resizable()
-                    .frame(width: 28, height: 28)
-                    .clipShape(RoundedRectangle(cornerRadius: 7, style: .continuous))
-            }
-            VStack(alignment: .leading, spacing: 1) {
-                Text("Settings")
-                    .font(.system(size: 15, weight: .heavy, design: .rounded))
-                Text("Server-Fo · \(SSHConfig.current().label)")
-                    .font(.system(size: 9.5))
-                    .foregroundStyle(.secondary)
-            }
-            Spacer()
-            Button("Done") {
-                store.applySettings()
-                dismiss()
-            }
-            .keyboardShortcut(.defaultAction)
-            .buttonStyle(.borderedProminent)
-            .tint(Theme.accentText)
-            .controlSize(.small)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-    }
-
-    // MARK: Appearance & visibility
-
-    private var appearanceCard: some View {
-        settingsCard(title: "Appearance", icon: "paintpalette.fill") {
-            HStack {
-                Text("Theme")
-                    .font(.system(size: 10.5))
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Picker("", selection: $appearance) {
-                    ForEach(AppearanceMode.allCases) { mode in
-                        Text(mode.label).tag(mode.rawValue)
-                    }
-                }
-                .pickerStyle(.segmented)
-                .labelsHidden()
-                .frame(width: 190)
-            }
-            Text("System follows macOS. The palette, charts and glows adapt to light and dark.")
-                .font(.system(size: 8.5))
-                .foregroundStyle(.tertiary)
-        }
-    }
-
-    private var visibilityCard: some View {
-        settingsCard(title: "What is visible", icon: "eye.fill") {
-            subLabel("Panel")
-            chipGrid([
-                ("Status pill", $showStatusPill),
-                ("Hostname", $showHost),
-                ("Footer", $showFooter),
-            ])
-
-            subLabel("Tabs")
-            chipGrid([
-                ("History", $showHistoryTab),
-                ("Updates", $showUpdatesTab),
-            ])
-
-            subLabel("Container rows")
-            chipGrid([
-                ("Image", $showRowImage),
-                ("Uptime", $showRowUptime),
-                ("Ports", $showRowPorts),
-                ("Health", $showRowHealth),
-                ("Restarts", $showRowRestarts),
-                ("CPU", $showRowCPU),
-                ("Memory", $showRowMemory),
-                ("Stack counts", $showRowStackCounts),
-            ])
-
-            subLabel("Detail, history and updates")
-            chipGrid([
-                ("Metrics", $showDetailMetrics),
-                ("Charts", $showDetailCharts),
-                ("Mounts & logs", $showDetailInspect),
-                ("State events", $showHistoryEvents),
-                ("Pending packages", $showPendingPackages),
-                ("Activity log", $showActivityLog),
-                ("RAM cache action", $showCacheAction),
-            ])
-
-            HStack {
-                Button("Show everything") { resetVisibility() }
-                    .controlSize(.small)
-                Spacer()
-                Text("Hidden items stay in the data; only the UI changes.")
-                    .font(.system(size: 8.5))
-                    .foregroundStyle(.tertiary)
-            }
-        }
-    }
-
-    private func subLabel(_ text: String) -> some View {
-        Text(text.uppercased())
-            .font(.system(size: 8, weight: .bold, design: .rounded))
-            .tracking(0.6)
-            .foregroundStyle(.tertiary)
-            .padding(.top, 2)
-    }
-
-    private func chipGrid(_ items: [(String, Binding<Bool>)]) -> some View {
-        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 5) {
-            ForEach(Array(items.enumerated()), id: \.offset) { _, item in
-                VisibilityChip(label: item.0, isOn: item.1)
-            }
-        }
-    }
-
-    private func resetVisibility() {
-        let keys = [
-            "serverfo.showHistoryTab", "serverfo.showUpdatesTab", "serverfo.showStatusPill",
-            "serverfo.showHost", "serverfo.showFooter",
-            "serverfo.showRowImage", "serverfo.showRowUptime", "serverfo.showRowPorts",
-            "serverfo.showRowHealth", "serverfo.showRowRestarts", "serverfo.showRowCPU",
-            "serverfo.showRowMemory", "serverfo.showRowStackCounts",
-            "serverfo.showDetailMetrics", "serverfo.showDetailCharts", "serverfo.showDetailInspect",
-            "serverfo.showHistoryEvents", "serverfo.showPendingPackages",
-            "serverfo.showActivityLog", "serverfo.showCacheAction",
-        ]
-        for key in keys { UserDefaults.standard.set(true, forKey: key) }
-    }
-
     // MARK: Connection
 
-    private var connectionCard: some View {
-        settingsCard(title: "Connection", icon: "network") {
-            field("Host", text: $host, placeholder: "192.168.1.22 or host.tailnet.ts.net")
-            field("User", text: $user, placeholder: "server1")
-            HStack(spacing: 10) {
-                Text("Port")
-                    .font(.system(size: 10.5))
-                    .foregroundStyle(.secondary)
-                    .frame(width: 74, alignment: .leading)
-                TextField("22", value: $port, format: .number)
-                    .textFieldStyle(.roundedBorder)
-                    .font(.system(size: 10.5, design: .monospaced))
-                    .frame(width: 64)
-                Spacer()
-            }
-            field("Identity", text: $identity, placeholder: "~/.ssh/id_ed25519 (optional)")
+    private var connectionSection: some View {
+        Section {
+            Toggle("Use Tailscale jump host", isOn: Binding(
+                get: { store.tailscaleEnabled },
+                set: { store.setTailscale($0) }
+            ))
 
-            Divider().opacity(0.35)
+            TextField("Server host", text: $host)
+                .disabled(store.tailscaleEnabled)
+                .foregroundStyle(store.tailscaleEnabled ? .secondary : .primary)
 
-            HStack(alignment: .top, spacing: 10) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Route via Tailscale")
-                        .font(.system(size: 10.5, weight: .medium))
-                    Text("Mac → Raspberry Pi over Tailscale → server1 on the Pi's LAN.")
-                        .font(.system(size: 8.5))
-                        .foregroundStyle(.tertiary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 8)
-                Toggle("", isOn: Binding(
-                    get: { store.tailscaleEnabled },
-                    set: { store.setTailscale($0) }
-                ))
-                .toggleStyle(.switch)
-                .tint(Theme.accentText)
-                .controlSize(.mini)
-                .labelsHidden()
-            }
+            TextField("Tailscale IP", text: $tailscaleHost)
+                .disabled(!store.tailscaleEnabled)
+                .foregroundStyle(store.tailscaleEnabled ? .primary : .secondary)
+
+            TextField("Pi user", text: $tailscaleUser)
+                .disabled(!store.tailscaleEnabled)
+                .foregroundStyle(store.tailscaleEnabled ? .primary : .secondary)
+
+            TextField("Server user", text: $user)
+
+            TextField("Port", value: $port, format: .number)
+
+            TextField("Identity (optional)", text: $identity)
 
             if store.tailscaleEnabled {
-                field("Pi host", text: $tailscaleHost, placeholder: "100.117.187.32")
-                field("Pi user", text: $tailscaleUser, placeholder: "pi")
-
-                HStack(spacing: 8) {
+                HStack {
                     Button {
                         detectingPi = true
                         piMessage = nil
                         Task {
                             let ip = await store.refreshTailscaleIP()
                             piMessage = ip.map { "Pi at \($0)" }
-                                ?? "Tailscale peer not found; using \(tailscaleHost)"
+                                ?? "No Tailscale peer found"
                             detectingPi = false
                             store.refresh()
                         }
                     } label: {
-                        HStack(spacing: 4) {
-                            if detectingPi { ProgressView().controlSize(.mini) }
-                            Text(detectingPi ? "Detecting…" : "Detect Pi IP")
-                                .font(.system(size: 10))
+                        if detectingPi {
+                            ProgressView().controlSize(.small)
+                        } else {
+                            Text("Detect Pi IP")
                         }
                     }
-                    .buttonStyle(.bordered)
-                    .tint(Theme.violetText)
-                    .controlSize(.small)
                     .disabled(detectingPi)
 
                     if let piMessage {
                         Text(piMessage)
-                            .font(.system(size: 9, design: .monospaced))
-                            .foregroundStyle(piMessage.hasPrefix("Pi at") ? Theme.green : Theme.amber)
-                            .lineLimit(1)
+                            .font(.caption)
+                            .foregroundStyle(piMessage.hasPrefix("Pi at") ? .green : .orange)
                     }
-                    Spacer()
                 }
-
-                Text("Route: \(SSHConfig.current().label)")
-                    .font(.system(size: 8.5, design: .monospaced))
-                    .foregroundStyle(.tertiary)
-                    .lineLimit(1)
             }
 
-            HStack(spacing: 8) {
+            HStack {
                 Button {
                     testing = true
                     testResult = nil
@@ -300,318 +151,213 @@ struct SettingsView: View {
                         testing = false
                     }
                 } label: {
-                    HStack(spacing: 4) {
-                        if testing { ProgressView().controlSize(.mini) }
-                        Text(testing ? "Testing…" : "Test connection")
-                            .font(.system(size: 10))
+                    if testing {
+                        ProgressView().controlSize(.small)
+                    } else {
+                        Text("Test connection")
                     }
                 }
-                .buttonStyle(.bordered)
-                .tint(Theme.accentText)
-                .controlSize(.small)
                 .disabled(testing)
 
                 if let testResult {
-                    Image(systemName: testOK ? "checkmark.circle.fill" : "xmark.octagon.fill")
-                        .font(.system(size: 9))
-                        .foregroundStyle(testOK ? Theme.green : Theme.red)
                     Text(testResult)
-                        .font(.system(size: 9, design: .monospaced))
-                        .foregroundStyle(testOK ? Theme.green : Theme.red)
+                        .font(.caption.monospaced())
+                        .foregroundStyle(testOK ? .green : .red)
                         .lineLimit(2)
-                        .textSelection(.enabled)
                 }
-                Spacer()
             }
 
-            Text("Key-based SSH only. The app runs /usr/bin/ssh in batch mode, so it never prompts for a password. New host keys are accepted on first use.")
-                .font(.system(size: 8.5))
-                .foregroundStyle(.tertiary)
-                .fixedSize(horizontal: false, vertical: true)
+            LabeledContent("Active route", value: SSHConfig.current().label)
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        } header: {
+            Text("Connection")
+        } footer: {
+            Text(store.tailscaleEnabled
+                 ? "Tailscale is on. Only the Tailscale IP is editable; turn it off to edit the server host."
+                 : "Direct LAN is on. Only the server host is editable; turn on Tailscale to edit the Tailscale IP.")
+        }
+    }
+
+    // MARK: Appearance
+
+    private var appearanceSection: some View {
+        Section("Appearance") {
+            Picker("Theme", selection: $appearance) {
+                ForEach(AppearanceMode.allCases) { mode in
+                    Text(mode.label).tag(mode.rawValue)
+                }
+            }
+            .pickerStyle(.segmented)
+
+            Text("System follows macOS. Light and Dark override it.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
     }
 
     // MARK: Refresh
 
-    private var refreshCard: some View {
-        settingsCard(title: "Refresh", icon: "arrow.clockwise") {
-            pickerRow(
-                "Containers",
-                selection: $refresh,
-                options: [(15, "15 seconds"), (30, "30 seconds"), (60, "1 minute"), (120, "2 minutes")],
-                note: "How often the panel asks the server for container state."
-            )
-            pickerRow(
-                "History sample",
-                selection: $sample,
-                options: [(1, "every minute"), (5, "every 5 minutes"), (15, "every 15 minutes"), (30, "every 30 minutes")],
-                note: "Written to the local 30-day history while the app is refreshing."
-            )
+    private var refreshSection: some View {
+        Section("Refresh") {
+            Picker("Containers", selection: $refresh) {
+                Text("15 seconds").tag(15)
+                Text("30 seconds").tag(30)
+                Text("1 minute").tag(60)
+                Text("2 minutes").tag(120)
+            }
+
+            Picker("History sample", selection: $sample) {
+                Text("Every minute").tag(1)
+                Text("Every 5 minutes").tag(5)
+                Text("Every 15 minutes").tag(15)
+                Text("Every 30 minutes").tag(30)
+            }
         }
     }
 
     // MARK: History
 
-    private var historyCard: some View {
-        settingsCard(title: "History", icon: "clock.arrow.circlepath") {
-            HStack {
-                Text("Retention")
-                    .font(.system(size: 10.5))
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Text("30 days · automatic")
-                    .font(.system(size: 10))
-                    .foregroundStyle(.primary)
-            }
+    private var historySection: some View {
+        Section("History") {
+            LabeledContent("Retention", value: "30 days, automatic")
             if let stats = store.historyStats {
-                Text("\(stats.samples) samples · \(stats.events) state changes · \(Fmt.bytes(stats.bytes)) on disk")
-                    .font(.system(size: 8.5, design: .monospaced))
-                    .foregroundStyle(.tertiary)
+                LabeledContent(
+                    "On disk",
+                    value: "\(stats.samples) samples · \(stats.events) events · \(Fmt.bytes(stats.bytes))"
+                )
             }
-            HStack(spacing: 8) {
+            HStack {
                 Button("Prune now") {
                     let removed = store.pruneNow()
                     pruneMessage = removed == 0
                         ? "Nothing older than 30 days."
-                        : "Removed \(removed) rows older than 30 days."
+                        : "Removed \(removed) rows."
                 }
-                .controlSize(.small)
                 if let pruneMessage {
                     Text(pruneMessage)
-                        .font(.system(size: 9))
+                        .font(.caption)
                         .foregroundStyle(.secondary)
                 }
-                Spacer()
             }
         }
     }
 
     // MARK: Maintenance
 
-    private var maintenanceCard: some View {
-        settingsCard(title: "Maintenance", icon: "shippingbox.fill") {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Upgrade every 30 days")
-                        .font(.system(size: 10.5, weight: .medium))
-                    Text("Runs sudo apt update && sudo apt upgrade -y, logs every line, and retries the next day if it fails.")
-                        .font(.system(size: 8.5))
-                        .foregroundStyle(.tertiary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer(minLength: 8)
-                Toggle("", isOn: $autoUpgrade)
-                    .toggleStyle(.switch)
-                    .tint(Theme.accentText)
-                    .controlSize(.mini)
-                    .labelsHidden()
-            }
-            HStack {
-                Text("Next run")
-                    .font(.system(size: 10.5))
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Text(store.nextUpgrade.map { Fmt.dateTime($0) } ?? "—")
-                    .font(.system(size: 10, design: .monospaced))
-            }
-            Text("The RAM cache action uses sudo sh -c 'echo 3 > /proc/sys/vm/drop_caches'. No dist-upgrade, no autoremove and no reboot are ever issued.")
-                .font(.system(size: 8.5))
-                .foregroundStyle(.tertiary)
-                .fixedSize(horizontal: false, vertical: true)
+    private var maintenanceSection: some View {
+        Section("Maintenance") {
+            Toggle("Upgrade every 30 days", isOn: $autoUpgrade)
+            LabeledContent(
+                "Next run",
+                value: store.nextUpgrade.map { Fmt.dateTime($0) } ?? "—"
+            )
+            Text("Runs sudo apt update && sudo apt upgrade -y. No dist-upgrade, no autoremove, no reboot. The RAM cache action is in the Updates tab.")
+                .font(.caption)
+                .foregroundStyle(.secondary)
+        }
+    }
+
+    // MARK: Visibility
+
+    @ViewBuilder
+    private var visibilitySections: some View {
+        Section("Panel") {
+            Toggle("Status pill", isOn: $showStatusPill)
+            Toggle("Hostname", isOn: $showHost)
+            Toggle("Footer", isOn: $showFooter)
+            Toggle("History tab", isOn: $showHistoryTab)
+            Toggle("Updates tab", isOn: $showUpdatesTab)
+        }
+
+        Section("Container rows") {
+            Toggle("Image", isOn: $showRowImage)
+            Toggle("Uptime", isOn: $showRowUptime)
+            Toggle("Ports", isOn: $showRowPorts)
+            Toggle("Health", isOn: $showRowHealth)
+            Toggle("Restarts", isOn: $showRowRestarts)
+            Toggle("CPU", isOn: $showRowCPU)
+            Toggle("Memory", isOn: $showRowMemory)
+            Toggle("Stack counts", isOn: $showRowStackCounts)
+        }
+
+        Section("Detail, history and updates") {
+            Toggle("Metrics", isOn: $showDetailMetrics)
+            Toggle("Charts", isOn: $showDetailCharts)
+            Toggle("Mounts & logs", isOn: $showDetailInspect)
+            Toggle("State events", isOn: $showHistoryEvents)
+            Toggle("Pending packages", isOn: $showPendingPackages)
+            Toggle("Activity log", isOn: $showActivityLog)
+            Toggle("RAM cache action", isOn: $showCacheAction)
         }
     }
 
     // MARK: General
 
-    private var generalCard: some View {
-        settingsCard(title: "General", icon: "gearshape.fill") {
-            toggleRow(
-                "Launch at login",
-                isOn: Binding(
-                    get: { loginItem },
-                    set: { value in
-                        loginItem = value
-                        try? LoginItem.set(value)
-                        loginItem = LoginItem.enabled
+    private var generalSection: some View {
+        Section("General") {
+            Toggle("Launch at login", isOn: Binding(
+                get: { loginItem },
+                set: { value in
+                    loginItem = value
+                    try? LoginItem.set(value)
+                    loginItem = LoginItem.enabled
+                }
+            ))
+
+            Toggle("Show Dock icon", isOn: Binding(
+                get: { showDockIcon },
+                set: { value in
+                    showDockIcon = value
+                    DockIcon.apply()
+                }
+            ))
+
+            Toggle("Show server widget", isOn: Binding(
+                get: { widget.isVisible },
+                set: { value in
+                    if value {
+                        ServerWidgetController.shared.show(store: store)
+                    } else {
+                        ServerWidgetController.shared.hide()
                     }
-                ),
-                note: "A LaunchAgent in ~/Library/LaunchAgents."
-            )
-            toggleRow(
-                "Show Dock icon",
-                isOn: Binding(
-                    get: { showDockIcon },
-                    set: { value in
-                        showDockIcon = value
-                        DockIcon.apply()
-                    }
-                ),
-                note: "Off by default. Optional fallback: adds a Dock icon that opens a dashboard window."
-            )
-            toggleRow(
-                "Show server widget",
-                isOn: Binding(
-                    get: { widget.isVisible },
-                    set: { value in
-                        if value {
-                            ServerWidgetController.shared.show(store: store)
-                        } else {
-                            ServerWidgetController.shared.hide()
-                        }
-                    }
-                ),
-                note: "Floating card with RAM, CPU, disk, uptime, Docker and updates."
-            )
-            toggleRow("Check GitHub for updates", isOn: $checkUpdates, note: "Once at launch, read-only.")
+                }
+            ))
+
+            Toggle("Check GitHub for updates", isOn: $checkUpdates)
         }
     }
 
-    private var aboutCard: some View {
-        settingsCard(title: "About", icon: "info.circle.fill") {
-            HStack {
-                Text("Version")
-                    .font(.system(size: 10.5))
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?")
-                    .font(.system(size: 10, design: .monospaced))
-                if let latest = store.latestVersion {
-                    Pill(text: "\(latest) available", color: Theme.amber)
-                }
+    // MARK: About
+
+    private var aboutSection: some View {
+        Section("About") {
+            LabeledContent(
+                "Version",
+                value: Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "?"
+            )
+
+            if let latest = store.latestVersion {
+                LabeledContent("Update", value: "\(latest) available")
             }
-            HStack(spacing: 8) {
+
+            HStack {
                 Button("GitHub repository") {
                     if let url = URL(string: "https://github.com/Dhivyadhanush/server-fo") {
                         NSWorkspace.shared.open(url)
                     }
                 }
-                .controlSize(.small)
+
                 Button("Check now") {
                     Task { await store.checkForUpdates() }
                 }
-                .controlSize(.small)
+
                 Spacer()
+
                 Button("Quit Server-Fo") {
                     NSApp.terminate(nil)
                 }
-                .controlSize(.small)
             }
-            Text("Server-Fo is a menu bar viewer for one server over SSH. It shows per-application usage, not host CPU, memory or network totals — the dynamic island already tracks those.")
-                .font(.system(size: 8.5))
-                .foregroundStyle(.tertiary)
-                .fixedSize(horizontal: false, vertical: true)
         }
-    }
-
-    // MARK: Building blocks
-
-    private func settingsCard<Content: View>(
-        title: String,
-        icon: String,
-        @ViewBuilder content: () -> Content
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 7) {
-            HStack(spacing: 6) {
-                Image(systemName: icon)
-                    .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(Theme.accentText.opacity(0.9))
-                Text(title.uppercased())
-                    .font(.system(size: 9, weight: .bold, design: .rounded))
-                    .tracking(0.7)
-                    .foregroundStyle(.tertiary)
-            }
-            content()
-        }
-        .cardStyle(padding: 11)
-    }
-
-    private func field(_ label: String, text: Binding<String>, placeholder: String = "") -> some View {
-        HStack(spacing: 10) {
-            Text(label)
-                .font(.system(size: 10.5))
-                .foregroundStyle(.secondary)
-                .frame(width: 74, alignment: .leading)
-            TextField(placeholder, text: text)
-                .textFieldStyle(.roundedBorder)
-                .font(.system(size: 10.5, design: .monospaced))
-        }
-    }
-
-    private func pickerRow(
-        _ label: String,
-        selection: Binding<Int>,
-        options: [(Int, String)],
-        note: String
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 2) {
-            HStack {
-                Text(label)
-                    .font(.system(size: 10.5))
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Picker("", selection: selection) {
-                    ForEach(options, id: \.0) { value, text in
-                        Text(text).tag(value)
-                    }
-                }
-                .labelsHidden()
-                .controlSize(.small)
-                .frame(width: 140)
-            }
-            Text(note)
-                .font(.system(size: 8.5))
-                .foregroundStyle(.tertiary)
-        }
-    }
-
-    private func toggleRow(_ label: String, isOn: Binding<Bool>, note: String) -> some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text(label)
-                    .font(.system(size: 10.5, weight: .medium))
-                Text(note)
-                    .font(.system(size: 8.5))
-                    .foregroundStyle(.tertiary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            Spacer(minLength: 8)
-            Toggle("", isOn: isOn)
-                .toggleStyle(.switch)
-                .tint(Theme.accentText)
-                .controlSize(.mini)
-                .labelsHidden()
-        }
-    }
-}
-
-struct VisibilityChip: View {
-    var label: String
-    @Binding var isOn: Bool
-
-    var body: some View {
-        Button {
-            isOn.toggle()
-        } label: {
-            HStack(spacing: 4) {
-                Image(systemName: isOn ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 9, weight: .semibold))
-                Text(label)
-                    .font(.system(size: 9.5, weight: .medium))
-                    .lineLimit(1)
-                Spacer(minLength: 0)
-            }
-            .foregroundStyle(isOn ? Theme.accentText : Color.secondary)
-            .padding(.horizontal, 7)
-            .padding(.vertical, 4.5)
-            .background(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .fill(isOn ? Theme.accent.opacity(0.10) : Theme.surfaceSunken)
-            )
-            .overlay(
-                RoundedRectangle(cornerRadius: 6, style: .continuous)
-                    .strokeBorder(isOn ? Theme.accent.opacity(0.25) : Theme.stroke, lineWidth: 0.8)
-            )
-        }
-        .buttonStyle(.plain)
     }
 }

@@ -4,6 +4,17 @@ All notable changes to Server-Fo. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases use
 [Semantic Versioning](https://semver.org/).
 
+## [1.5.0] — 2026-11-14
+
+### Changed
+
+- Settings now uses the same native macOS `Form` layout as Copilot Usage:
+  grouped sections, standard text fields, toggles and pickers.
+- Only the address for the active route is editable. Tailscale on makes the
+  Tailscale IP editable and the server host read-only; Tailscale off does the
+  reverse. The inactive user field is disabled too.
+- The Route footer explains the active mode and where to edit the other address.
+
 ## [1.4.2] — 2026-11-14
 
 ### Fixed
