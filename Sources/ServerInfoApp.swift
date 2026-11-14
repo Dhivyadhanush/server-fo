@@ -12,9 +12,21 @@ enum AppState {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         DockIcon.apply()
+        installStatusItemWhenReady(attempts: 20)
 
         if UserDefaults.standard.bool(forKey: ServerWidgetController.key) {
             showWidgetWhenReady(attempts: 4)
+        }
+    }
+
+    private func installStatusItemWhenReady(attempts: Int) {
+        if let store = AppState.store {
+            StatusItemController.shared.install(store: store)
+            return
+        }
+        guard attempts > 0 else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+            self.installStatusItemWhenReady(attempts: attempts - 1)
         }
     }
 
@@ -96,11 +108,10 @@ struct ServerInfoApp: App {
     }
 
     var body: some Scene {
-        MenuBarExtra {
-            PanelView(store: store)
-        } label: {
-            MenuBarLabel(store: store)
+        // The status item and popover are created in AppDelegate; a SwiftUI
+        // MenuBarExtra was not reliably inserting on a full menu bar.
+        Settings {
+            EmptyView()
         }
-        .menuBarExtraStyle(.window)
     }
 }

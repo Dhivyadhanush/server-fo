@@ -161,12 +161,13 @@ Then open **Settings** (gear icon) and check:
 ### Opening the panel
 
 Server-Fo is a **menu-bar app**: it has no main window. Click the server-rack
-icon in the menu bar to open the panel. If the menu bar is full and the icon is
-tucked into the overflow, use a menu-bar organizer (Align-MBar, Ice, Bartender)
-to pin it, or turn on **Settings → General → Show Dock icon** for an optional
-Dock-icon/dashboard fallback.
+icon in the menu bar to open the panel. **⌃⌥⌘S** opens the same panel even when
+the menu bar is full. Right-click the icon for **Open panel**, **Server widget**
+and **Quit**.
 
-The Dock icon is **off by default**; the menu bar is the normal entry point.
+If the icon is tucked into the menu-bar overflow, pin it with Align-MBar, Ice or
+Bartender. The optional Dock-icon fallback is **off by default** in
+**Settings → General → Show Dock icon**.
 
 <img src="docs/panel-settings.png" width="420" alt="Settings">
 
@@ -231,6 +232,8 @@ $S --update            # check GitHub for a newer release
 $S --tailscale on|off  # route through the Pi's Tailscale address, or direct
 $S --tailscale-ip      # print the detected Pi tailnet IP
 $S --route             # print the active server/jump route
+$S --toggle            # open/close the menu-bar panel of a running app
+$S --vitals            # print RAM, CPU, disk, uptime, Docker and updates
 $S --loginitem on|off  # manage the LaunchAgent
 $S --selftest          # parser, byte units, schedule and retention tests
 ```

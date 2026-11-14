@@ -15,7 +15,6 @@ struct SettingsView: View {
     @AppStorage("serverfo.sample") private var sample = 5
     @AppStorage("serverfo.autoUpgrade") private var autoUpgrade = true
     @AppStorage("serverfo.checkUpdates") private var checkUpdates = true
-    @AppStorage("serverfo.barBadge") private var barBadge = false
     @AppStorage("serverfo.appearance") private var appearance = "system"
     @AppStorage("serverfo.showDockIcon") private var showDockIcon = false
     @ObservedObject private var widget = ServerWidgetController.shared
@@ -25,7 +24,6 @@ struct SettingsView: View {
     @AppStorage("serverfo.showStatusPill") private var showStatusPill = true
     @AppStorage("serverfo.showHost") private var showHost = true
     @AppStorage("serverfo.showFooter") private var showFooter = true
-    @AppStorage("serverfo.showMenuDot") private var showMenuDot = true
     @AppStorage("serverfo.showRowImage") private var showRowImage = true
     @AppStorage("serverfo.showRowUptime") private var showRowUptime = true
     @AppStorage("serverfo.showRowPorts") private var showRowPorts = true
@@ -136,8 +134,6 @@ struct SettingsView: View {
                 ("Status pill", $showStatusPill),
                 ("Hostname", $showHost),
                 ("Footer", $showFooter),
-                ("Menu bar dot", $showMenuDot),
-                ("Menu bar count", $barBadge),
             ])
 
             subLabel("Tabs")
@@ -199,7 +195,7 @@ struct SettingsView: View {
     private func resetVisibility() {
         let keys = [
             "serverfo.showHistoryTab", "serverfo.showUpdatesTab", "serverfo.showStatusPill",
-            "serverfo.showHost", "serverfo.showFooter", "serverfo.showMenuDot",
+            "serverfo.showHost", "serverfo.showFooter",
             "serverfo.showRowImage", "serverfo.showRowUptime", "serverfo.showRowPorts",
             "serverfo.showRowHealth", "serverfo.showRowRestarts", "serverfo.showRowCPU",
             "serverfo.showRowMemory", "serverfo.showRowStackCounts",
@@ -208,7 +204,6 @@ struct SettingsView: View {
             "serverfo.showActivityLog", "serverfo.showCacheAction",
         ]
         for key in keys { UserDefaults.standard.set(true, forKey: key) }
-        barBadge = false
     }
 
     // MARK: Connection

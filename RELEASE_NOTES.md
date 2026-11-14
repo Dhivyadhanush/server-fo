@@ -1,29 +1,26 @@
-# Server-Fo 1.4.0
+# Server-Fo 1.4.1
 
-A floating server-vitals widget.
+A reliable menu-bar item.
 
-## New
+## Fixed
 
-- **RAM** used / total and percentage.
-- **CPU** utilisation, core count and 1/5/15-minute load average.
-- **Root disk** used / total and percentage.
-- **Uptime**, **Docker running count**, **pending updates** and
-  **reboot-required** flag.
-- Always-on-top, draggable card that remembers its position and updates on the
-  normal refresh cycle.
-- **Settings → General → Show server widget** enables it; the X on the card hides
-  it. It reappears at login while enabled.
-- Uses the same SSH/Tailscale route as the panel. Host metrics were added to the
-  existing probe (`/proc/meminfo`, `/proc/stat`, `/proc/loadavg`, `df -Pk /`).
+- Replaced SwiftUI’s `MenuBarExtra` with a real `NSStatusItem`, created at launch.
+  This fixes the case where the app was running but no menu-bar item appeared.
+- **⌃⌥⌘S** opens the panel even when the menu-bar icon is hidden by overflow.
+- Right-click the status item for **Open panel**, **Server widget** and **Quit**.
+- `ServerInfo --toggle` opens the panel from the terminal.
 
-## Open
+## Widget
 
-Open the menu-bar panel → gear → General → **Show server widget**.
+The floating server widget is unchanged: RAM, CPU/load, disk, uptime, Docker,
+updates and reboot state. It is still off until enabled in **Settings → General →
+Show server widget**.
+
+The server itself is currently unreachable from the Pi, so the widget cannot
+show live numbers until it is back online.
 
 ## Upgrade
 
 ```shell
 brew upgrade --cask server-fo
 ```
-
-Existing history and settings are preserved. The widget is off until enabled.

@@ -4,6 +4,19 @@ All notable changes to Server-Fo. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases use
 [Semantic Versioning](https://semver.org/).
 
+## [1.4.1] — 2026-11-14
+
+### Fixed
+
+- Replaced SwiftUI `MenuBarExtra` with a plain `NSStatusItem`. The status item is
+  created directly at launch instead of depending on a SwiftUI scene, which was
+  not reliably inserting on this Mac.
+- **⌃⌥⌘S** opens the same popover when the icon is hidden by menu-bar overflow.
+- Right-clicking the status item offers **Open panel**, **Server widget** and
+  **Quit**.
+- `--toggle` opens the panel of a running instance from the terminal.
+- Removed the now-unused menu-bar dot/count visibility toggles.
+
 ## [1.4.0] — 2026-11-14
 
 ### Added

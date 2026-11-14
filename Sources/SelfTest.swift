@@ -41,6 +41,13 @@ enum Headless {
             tailscaleIP()
         case "--route":
             route()
+        case "--toggle":
+            DistributedNotificationCenter.default().post(
+                name: NSNotification.Name("dev.dhanuz.server-fo.toggle"),
+                object: nil
+            )
+            print("toggle sent")
+            exit(0)
         case "--vitals":
             vitals()
         case "--clear-cache":
