@@ -90,6 +90,22 @@ New host keys are accepted on first connection
 (`StrictHostKeyChecking=accept-new`). Everything runs over one SSH round trip per
 refresh, with connection multiplexing kept in `/tmp` for speed.
 
+## Server widget
+
+A small floating card shows the host vitals that the panel deliberately leaves
+out: **RAM**, **CPU + load**, **disk**, **uptime**, **Docker counts**, **pending
+updates** and the reboot flag. It is always-on-top, draggable, remembers its
+position, and updates on the same refresh cycle as the panel.
+
+Enable it with **Settings → General → Show server widget**, or close it with the
+X on the card. It appears at login while enabled.
+
+<img src="docs/widget.png" width="288" alt="Server-Fo floating server widget">
+
+The widget uses the same SSH route as the rest of the app, including the
+Tailscale jump host. When the server is unreachable it shows the connection
+state instead of stale numbers.
+
 ## Tailscale
 
 A globe toggle in the panel header — and the same switch in **Settings →

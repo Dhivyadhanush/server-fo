@@ -248,6 +248,18 @@ enum RemoteProbe {
     echo "uptime=$(cut -d. -f1 /proc/uptime 2>/dev/null)"
     echo "docker=$(docker version --format '{{.Server.Version}}' 2>/dev/null)"
     echo "reboot=$([ -f /var/run/reboot-required ] && echo 1 || echo 0)"
+    read -r ram_total ram_available < <(awk '/^MemTotal:/{t=$2} /^MemAvailable:/{a=$2} END{print t+0" "a+0}' /proc/meminfo)
+    echo "ram_total=$ram_total"
+    echo "ram_available=$ram_available"
+    read -r disk_total disk_used < <(df -Pk / 2>/dev/null | awk 'NR==2{print $2" "$3}')
+    echo "disk_total=$disk_total"
+    echo "disk_used=$disk_used"
+    echo "cores=$(nproc 2>/dev/null || getconf _NPROCESSORS_ONLN 2>/dev/null || echo 0)"
+    echo "load=$(cut -d' ' -f1-3 /proc/loadavg 2>/dev/null)"
+    read -r cpu_total_1 cpu_idle_1 < <(awk '/^cpu /{print $2+$3+$4+$5+$6+$7+$8, $5+$6}' /proc/stat)
+    sleep 0.2
+    read -r cpu_total_2 cpu_idle_2 < <(awk '/^cpu /{print $2+$3+$4+$5+$6+$7+$8, $5+$6}' /proc/stat)
+    echo "cpu=$(awk -v t1=$cpu_total_1 -v i1=$cpu_idle_1 -v t2=$cpu_total_2 -v i2=$cpu_idle_2 'BEGIN { d=t2-t1; if (d<=0) printf "0.0"; else printf "%.1f", 100*(1-(i2-i1)/d) }')"
     echo '###APT'
     apt list --upgradable 2>/dev/null | tail -n +2 | cut -d/ -f1
     echo '###PS'

@@ -195,6 +195,13 @@ final class Store: ObservableObject {
 
     // MARK: History
 
+    /// Used by the snapshots to preview the widget without a live server.
+    func previewSeed(_ probe: Probe) {
+        self.probe = probe
+        connection = .online
+        lastUpdated = Date()
+    }
+
     func reloadHistory() {
         let history = self.history
         Task.detached(priority: .utility) {

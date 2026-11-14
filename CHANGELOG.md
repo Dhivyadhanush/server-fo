@@ -4,6 +4,19 @@ All notable changes to Server-Fo. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases use
 [Semantic Versioning](https://semver.org/).
 
+## [1.4.0] — 2026-11-14
+
+### Added
+
+- A floating **server vitals widget**: RAM, CPU + load average, root disk, uptime,
+  Docker running count, pending package updates and reboot-required state.
+  Always-on-top, draggable, remembers its position, and follows the same
+  refresh interval and Tailscale route as the panel.
+- **Settings → General → Show server widget** enables it; the card's close
+  button hides it. It reappears at login while enabled.
+- Host metrics come from `/proc/meminfo`, `/proc/stat`, `/proc/loadavg` and
+  `df -Pk /` in the existing single SSH probe.
+
 ## [1.3.4] — 2026-11-12
 
 ### Changed

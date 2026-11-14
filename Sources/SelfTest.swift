@@ -31,6 +31,8 @@ enum Headless {
             detailSnapshot(rest.first, path: rest.count > 1 ? rest[1] : nil)
         case "--snapshot-settings":
             settingsSnapshot(arguments.dropFirst().first)
+        case "--snapshot-widget":
+            widgetSnapshot(arguments.dropFirst().first)
         case "--prune":
             prune()
         case "--tailscale":
@@ -39,6 +41,8 @@ enum Headless {
             tailscaleIP()
         case "--route":
             route()
+        case "--vitals":
+            vitals()
         case "--clear-cache":
             clearCache()
         case "--upgrade":
@@ -179,6 +183,50 @@ enum Headless {
         exit(1)
     }
 
+    private static func widgetSnapshot(_ path: String?) -> Never {
+        let destination = path ?? ".build/widget.png"
+        Task { @MainActor in
+            NSApplication.shared.setActivationPolicy(.accessory)
+            let store = Store()
+
+            var sample = Probe()
+            sample.hostname = "server"
+            sample.os = "Ubuntu 24.04.5 LTS"
+            sample.kernel = "6.8.0-147-generic"
+            sample.dockerVersion = "29.9.0"
+            sample.uptimeSeconds = 9 * 86_400 + 4 * 3_600
+            sample.rebootRequired = true
+            sample.ramTotal = 8 * 1_073_741_824
+            sample.ramAvailable = 2_576_980_377
+            sample.cpuPercent = 23.4
+            sample.cpuCores = 4
+            sample.load1 = 0.64
+            sample.load5 = 0.41
+            sample.load15 = 0.33
+            sample.diskTotal = 128 * 1_073_741_824
+            sample.diskUsed = 74 * 1_073_741_824
+            sample.aptUpgradable = (0..<30).map { "package-\($0)" }
+            sample.containers = (0..<16).map { index in
+                var container = Container(name: "app-\(index)")
+                container.state = index == 15 ? "exited" : "running"
+                container.status = container.state
+                return container
+            }
+            store.previewSeed(sample)
+
+            let root = ZStack {
+                AppBackground()
+                ServerWidgetView(store: store, onClose: {})
+                    .padding(10)
+            }
+            .frame(width: 308, height: 372)
+
+            exit(await render(root, to: destination, size: CGSize(width: 308, height: 372)) ? 0 : 1)
+        }
+        RunLoop.main.run()
+        exit(1)
+    }
+
     private static func settingsSnapshot(_ path: String?) -> Never {
         let destination = path ?? ".build/settings.png"
         Task { @MainActor in
@@ -205,7 +253,11 @@ enum Headless {
     }
 
     @MainActor
-    private static func render<V: View>(_ view: V, to destination: String) async -> Bool {
+    private static func render<V: View>(
+        _ view: V,
+        to destination: String,
+        size: CGSize = CGSize(width: Theme.panelWidth, height: Theme.panelHeight)
+    ) async -> Bool {
         switch ProcessInfo.processInfo.environment["SERVERFO_SNAPSHOT_SCHEME"]?.lowercased() {
         case "light": NSApp.appearance = NSAppearance(named: .aqua)
         case "dark": NSApp.appearance = NSAppearance(named: .darkAqua)
@@ -213,7 +265,7 @@ enum Headless {
         }
 
         let hosting = NSHostingView(rootView: view)
-        hosting.frame = NSRect(x: 0, y: 0, width: Theme.panelWidth, height: Theme.panelHeight)
+        hosting.frame = NSRect(x: 0, y: 0, width: size.width, height: size.height)
 
         let window = NSWindow(
             contentRect: hosting.frame,
@@ -304,6 +356,26 @@ enum Headless {
         print("jump:      \(config.jumpDestination ?? "direct")")
         print("route:     \(config.label)")
         exit(0)
+    }
+
+    private static func vitals() -> Never {
+        runAndExit {
+            do {
+                let raw = try await RemoteProbe.fetch()
+                let probe = ProbeParser.parse(raw)
+                print("host      \(probe.hostname)")
+                print("RAM       \(Fmt.bytes(probe.ramUsed)) / \(Fmt.bytes(probe.ramTotal)) · \(Fmt.percent(probe.ramPercent))")
+                print("CPU       \(Fmt.percent(probe.cpuPercent)) · \(probe.cpuCores) cores · load \(String(format: "%.2f %.2f %.2f", probe.load1, probe.load5, probe.load15))")
+                print("disk      \(Fmt.bytes(probe.diskUsed)) / \(Fmt.bytes(probe.diskTotal)) · \(Fmt.percent(probe.diskPercent))")
+                print("uptime    \(Fmt.uptime(probe.uptimeSeconds)) · reboot \(probe.rebootRequired ? "required" : "not required")")
+                print("docker    \(probe.running) running · \(probe.stopped) stopped")
+                print("updates   \(probe.aptUpgradable.count) pending")
+                return 0
+            } catch {
+                print("error: \(error.localizedDescription)")
+                return 1
+            }
+        }
     }
 
     private static func clearCache() -> Never {
@@ -484,6 +556,13 @@ enum SelfTest {
         uptime=432001
         docker=29.9.0
         reboot=0
+        ram_total=8000000
+        ram_available=2000000
+        cpu=12.5
+        cores=4
+        load=0.50 0.40 0.30
+        disk_total=100000000
+        disk_used=25000000
         ###APT
         linux-image-6.8.0-91
         openssl
@@ -500,6 +579,13 @@ enum SelfTest {
         check("meta os", probe.os == "Ubuntu 24.04.5 LTS")
         check("meta docker", probe.dockerVersion == "29.9.0")
         check("pending packages", probe.aptUpgradable == ["linux-image-6.8.0-91", "openssl"], "\(probe.aptUpgradable)")
+        check("host ram total", probe.ramTotal == 8_192_000_000, "\(probe.ramTotal)")
+        check("host ram used", probe.ramUsed == 6_144_000_000, "\(probe.ramUsed)")
+        check("host ram percent", probe.ramPercent == 75, "\(probe.ramPercent)")
+        check("host cpu", probe.cpuPercent == 12.5, "\(probe.cpuPercent)")
+        check("host cores", probe.cpuCores == 4)
+        check("host load", probe.load1 == 0.5 && probe.load15 == 0.3)
+        check("host disk", probe.diskPercent == 25, "\(probe.diskPercent)")
         check("container count", probe.containers.count == 1)
         check("running count", probe.running == 1)
 

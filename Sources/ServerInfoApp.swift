@@ -12,6 +12,21 @@ enum AppState {
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
         DockIcon.apply()
+
+        if UserDefaults.standard.bool(forKey: ServerWidgetController.key) {
+            showWidgetWhenReady(attempts: 4)
+        }
+    }
+
+    private func showWidgetWhenReady(attempts: Int) {
+        if let store = AppState.store {
+            ServerWidgetController.shared.show(store: store)
+            return
+        }
+        guard attempts > 0 else { return }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.showWidgetWhenReady(attempts: attempts - 1)
+        }
     }
 
     /// Dock icon click, Launchpad, or opening the app again while it is

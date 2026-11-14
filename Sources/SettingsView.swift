@@ -18,6 +18,7 @@ struct SettingsView: View {
     @AppStorage("serverfo.barBadge") private var barBadge = false
     @AppStorage("serverfo.appearance") private var appearance = "system"
     @AppStorage("serverfo.showDockIcon") private var showDockIcon = false
+    @ObservedObject private var widget = ServerWidgetController.shared
 
     @AppStorage("serverfo.showHistoryTab") private var showHistoryTab = true
     @AppStorage("serverfo.showUpdatesTab") private var showUpdatesTab = true
@@ -451,6 +452,20 @@ struct SettingsView: View {
                     }
                 ),
                 note: "Off by default. Optional fallback: adds a Dock icon that opens a dashboard window."
+            )
+            toggleRow(
+                "Show server widget",
+                isOn: Binding(
+                    get: { widget.isVisible },
+                    set: { value in
+                        if value {
+                            ServerWidgetController.shared.show(store: store)
+                        } else {
+                            ServerWidgetController.shared.hide()
+                        }
+                    }
+                ),
+                note: "Floating card with RAM, CPU, disk, uptime, Docker and updates."
             )
             toggleRow("Check GitHub for updates", isOn: $checkUpdates, note: "Once at launch, read-only.")
         }

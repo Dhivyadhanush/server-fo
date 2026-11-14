@@ -121,6 +121,28 @@ struct Probe {
     var containers: [Container] = []
     var fetchedAt = Date()
 
+    // Host vitals for the floating widget. Kept out of the main panel by
+    // design; the dynamic island owns the always-on system view.
+    var ramTotal: Int64 = 0
+    var ramAvailable: Int64 = 0
+    var cpuPercent: Double = 0
+    var cpuCores = 0
+    var load1: Double = 0
+    var load5: Double = 0
+    var load15: Double = 0
+    var diskTotal: Int64 = 0
+    var diskUsed: Int64 = 0
+
+    var ramUsed: Int64 { max(0, ramTotal - ramAvailable) }
+    var ramPercent: Double {
+        guard ramTotal > 0 else { return 0 }
+        return min(100, Double(ramUsed) / Double(ramTotal) * 100)
+    }
+    var diskPercent: Double {
+        guard diskTotal > 0 else { return 0 }
+        return min(100, Double(diskUsed) / Double(diskTotal) * 100)
+    }
+
     var running: Int { containers.filter(\.isRunning).count }
     var stopped: Int { containers.filter { !$0.isRunning }.count }
     var unhealthy: Int { containers.filter { $0.isRunning && $0.healthState == .unhealthy }.count }
@@ -178,6 +200,23 @@ enum ProbeParser {
         probe.uptimeSeconds = Int(meta["uptime"] ?? "") ?? 0
         probe.rebootRequired = meta["reboot"] == "1"
         probe.aptUpgradable = apt
+
+        func kilobytes(_ key: String) -> Int64 {
+            (Int64(meta[key] ?? "") ?? 0) * 1_024
+        }
+        probe.ramTotal = kilobytes("ram_total")
+        probe.ramAvailable = kilobytes("ram_available")
+        probe.cpuPercent = Double(meta["cpu"] ?? "") ?? 0
+        probe.cpuCores = Int(meta["cores"] ?? "") ?? 0
+        probe.diskTotal = kilobytes("disk_total")
+        probe.diskUsed = kilobytes("disk_used")
+
+        let loads = (meta["load"] ?? "").split(separator: " ").compactMap { Double($0) }
+        if loads.count >= 3 {
+            probe.load1 = loads[0]
+            probe.load5 = loads[1]
+            probe.load15 = loads[2]
+        }
 
         var byName: [String: Container] = [:]
         var order: [String] = []
