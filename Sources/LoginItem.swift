@@ -17,6 +17,9 @@ enum LoginItem {
     /// A rebuild or a move leaves the plist pointing at a path that no longer
     /// exists, so fix it on launch instead of silently losing the login item.
     static func repair() {
+        // Never let a development build under ~/.build rewrite the login item
+        // to a path that gets deleted.
+        guard Bundle.main.bundlePath.hasPrefix("/Applications/") else { return }
         guard enabled,
               let path = Bundle.main.executableURL?.path,
               let plist = NSDictionary(contentsOf: url) as? [String: Any],

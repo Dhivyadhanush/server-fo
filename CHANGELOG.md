@@ -4,6 +4,15 @@ All notable changes to Server-Fo. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases use
 [Semantic Versioning](https://semver.org/).
 
+## [1.4.2] — 2026-11-14
+
+### Fixed
+
+- A development build under `.build` could rewrite the login item to its own
+  path, which then disappeared and made the app fail to start with
+  `EX_CONFIG`. Only an app installed under `/Applications` may repair the login
+  item now.
+
 ## [1.4.1] — 2026-11-14
 
 ### Fixed

@@ -1,26 +1,22 @@
-# Server-Fo 1.4.1
+# Server-Fo 1.4.2
 
-A reliable menu-bar item.
+Login-item safety fix.
 
 ## Fixed
 
-- Replaced SwiftUI’s `MenuBarExtra` with a real `NSStatusItem`, created at launch.
-  This fixes the case where the app was running but no menu-bar item appeared.
-- **⌃⌥⌘S** opens the panel even when the menu-bar icon is hidden by overflow.
-- Right-click the status item for **Open panel**, **Server widget** and **Quit**.
-- `ServerInfo --toggle` opens the panel from the terminal.
+- A local development build could rewrite the login item to
+  `~/s-info/.build/Server-Fo.app`. Removing that build then made launchd fail
+  with `EX_CONFIG`. Only the installed `/Applications/Server-Fo.app` may repair
+  the login item now.
+- The LaunchAgent is verified to point at `/Applications/Server-Fo.app`.
 
-## Widget
-
-The floating server widget is unchanged: RAM, CPU/load, disk, uptime, Docker,
-updates and reboot state. It is still off until enabled in **Settings → General →
-Show server widget**.
-
-The server itself is currently unreachable from the Pi, so the widget cannot
-show live numbers until it is back online.
+This includes 1.4.1’s real `NSStatusItem` menu-bar item and ⌃⌥⌘S hotkey.
 
 ## Upgrade
 
 ```shell
 brew upgrade --cask server-fo
 ```
+
+The server itself is currently unreachable from the Pi, so the server widget
+shows the connection state instead of host numbers until it is back.
