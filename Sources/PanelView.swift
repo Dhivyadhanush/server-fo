@@ -158,10 +158,13 @@ struct PanelView: View {
 
     private var iconBadge: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 11, style: .continuous)
-                .fill(Theme.accent.opacity(0.18))
-                .blur(radius: 7)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(Theme.surfaceHigh)
                 .frame(width: 36, height: 36)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 10, style: .continuous)
+                        .strokeBorder(Theme.stroke, lineWidth: 0.8)
+                )
 
             if let icon = AppAssets.appIcon {
                 Image(nsImage: icon)
@@ -182,9 +185,14 @@ struct PanelView: View {
     }
 
     private var hostLine: String {
-        guard let probe = store.probe else { return "Connecting to \(SSHConfig.current().label)" }
-        let os = shortOS(probe.os)
-        return os.isEmpty ? probe.hostname : "\(probe.hostname) · \(os)"
+        if let probe = store.probe {
+            let os = shortOS(probe.os)
+            return os.isEmpty ? probe.hostname : "\(probe.hostname) · \(os)"
+        }
+        if case .unreachable = store.connection {
+            return "Offline · \(SSHConfig.current().destination)"
+        }
+        return "Connecting to \(SSHConfig.current().label)"
     }
 
     @ViewBuilder
@@ -232,8 +240,8 @@ struct PanelView: View {
                     .background {
                         if tab == item {
                             RoundedRectangle(cornerRadius: 7, style: .continuous)
-                                .fill(Theme.accentGradient)
-                                .shadow(color: Theme.accent.opacity(0.35), radius: 6, y: 2)
+                                .fill(Theme.accent)
+                                .shadow(color: .black.opacity(0.14), radius: 4, y: 1)
                                 .matchedGeometryEffect(id: "tab", in: tabNamespace)
                         }
                     }

@@ -79,6 +79,10 @@ enum SSHError: LocalizedError {
             return "Could not reach the server. \(message)"
         case .commandFailed(let code, let message):
             let tail = message.trimmingCharacters(in: .whitespacesAndNewlines)
+            if tail.contains("Host key verification failed")
+                || tail.contains("REMOTE HOST IDENTIFICATION HAS CHANGED") {
+                return "SSH host key verification failed. Check the server fingerprint and ~/.ssh/known_hosts; the app will not trust a changed key."
+            }
             return tail.isEmpty ? "Remote command exited \(code)." : tail
         }
     }
@@ -200,18 +204,25 @@ enum SSH {
     }
 
     private static func arguments(for config: SSHConfig) -> [String] {
-        let socket = "/tmp/serverfo-\(getuid())-%C"
         var args = [
             "-T",
+            "-4",
             "-o", "BatchMode=yes",
             "-o", "ConnectTimeout=8",
             "-o", "ServerAliveInterval=15",
             "-o", "ServerAliveCountMax=3",
-            "-o", "StrictHostKeyChecking=accept-new",
+            // Host keys are pinned in ~/.ssh/known_hosts. A changed key is a
+            // hard failure, never silently accepted.
+            "-o", "StrictHostKeyChecking=yes",
+            "-o", "PasswordAuthentication=no",
+            "-o", "KbdInteractiveAuthentication=no",
+            "-o", "PreferredAuthentications=publickey",
+            "-o", "ForwardAgent=no",
+            "-o", "ForwardX11=no",
+            "-o", "PermitLocalCommand=no",
             "-o", "LogLevel=ERROR",
-            "-o", "ControlMaster=auto",
-            "-o", "ControlPath=\(socket)",
-            "-o", "ControlPersist=300",
+            // No ControlMaster: every probe is a fresh, short-lived SSH
+            // session; nothing authenticated stays behind on disk.
         ]
         if config.port != 22 {
             args += ["-p", String(config.port)]

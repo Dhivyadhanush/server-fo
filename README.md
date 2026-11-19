@@ -56,10 +56,10 @@ line by line, and retries the next day if it fails. Nothing else is ever run: no
 ## Appearance and visibility
 
 - **Theme** follows macOS by default. **Settings → Appearance** can force Light
-  or Dark. The gradient canvas, grid, glows, charts and status colours adapt to
-  both appearances.
+  or Dark. The flat canvas, solid accent, hairline borders, charts and status
+  colours adapt to both appearances.
 - **Settings → What is visible** controls the panel piece by piece: status pill,
-  hostname, footer, menu bar dot and count; the History and Updates tabs;
+  hostname, footer; the History and Updates tabs;
   image / uptime / ports / health / restarts / CPU / memory / stack counts on
   each container row; detail metrics, charts, mounts & logs; history events,
   pending package list, activity log and the RAM cache action.
@@ -82,13 +82,12 @@ Requirements:
   work without a password).
 - Docker accessible to that SSH user (`docker ps` without `sudo`, usually via the
   `docker` group).
-- Passwordless sudo for the two maintenance actions (`sudo -n true` succeeds):
-  `apt` upgrades and the RAM cache drop. Viewing containers and history works
-  without it.
+- Passwordless sudo **scoped to the exact maintenance commands** (see
+  [Security](#security)). Viewing containers and history works without it.
 
-New host keys are accepted on first connection
-(`StrictHostKeyChecking=accept-new`). Everything runs over one SSH round trip per
-refresh, with connection multiplexing kept in `/tmp` for speed.
+Host keys must already be pinned in `~/.ssh/known_hosts`. The app uses
+`StrictHostKeyChecking=yes` and refuses a changed key. Every refresh is a fresh,
+key-only SSH session; there is no persistent control socket.
 
 ## Server widget
 
@@ -193,7 +192,7 @@ due time, the upgrade runs at the first refresh after wake.
 **Updates → RAM cache → Clear cache** runs, after a `sync`:
 
 ```shell
-sudo -n sh -c 'echo 3 > /proc/sys/vm/drop_caches'
+sudo -n /usr/sbin/sysctl -w vm.drop_caches=3
 ```
 
 This drops clean page cache, dentries and inodes. It does not free memory held
@@ -280,16 +279,72 @@ build.sh        swiftc + lipo + Info.plist + ad-hoc codesign
 .github/        tag-driven release workflow
 ```
 
-## Security notes
+## Security
 
-- No credential storage: SSH keys stay in `~/.ssh` / the agent.
-- The only stored server data is Docker state, apt output and cache-clear output,
-  in the local history database.
-- The packaged app is ad-hoc signed and not notarised. Build it yourself if you
-  prefer; the source is the whole product.
-- Maintenance runs use `sudo -n` (never prompt) and require a working
-  passwordless sudo rule. If the rule is absent, the run fails and is logged;
-  nothing hangs.
+**Transport.** The app only uses SSH. There is no HTTP API, no agent on the
+server and no credential store. When Tailscale is on, the Pi forwards TCP
+ciphertext; the SSH session is still authenticated and encrypted end-to-end
+between the Mac and `server1`, so the Pi cannot read the payload.
+
+**Host keys are pinned.** The client uses:
+
+```
+StrictHostKeyChecking=yes
+PasswordAuthentication=no
+KbdInteractiveAuthentication=no
+PreferredAuthentications=publickey
+ForwardAgent=no
+ForwardX11=no
+PermitLocalCommand=no
+```
+
+A changed host key is a hard failure; the app never accepts it silently. Set up
+the pins once with the same route the app uses:
+
+```shell
+ssh pi@100.117.187.32
+ssh -J pi@100.117.187.32 server1@192.168.2.206
+```
+
+Verify the fingerprints out of band before accepting them. Each refresh opens a
+fresh, short-lived SSH session; ControlMaster/ControlPath are deliberately not
+used, so nothing authenticated stays behind on disk.
+
+**Password SSH is disabled** on both the Pi and `server1` via
+`/etc/ssh/sshd_config.d/00-server-fo-hardening.conf`:
+
+```
+PasswordAuthentication no
+KbdInteractiveAuthentication no
+PermitRootLogin prohibit-password
+PubkeyAuthentication yes
+```
+
+**Sudo is scoped.** `/etc/sudoers.d/server1` keeps password-protected admin
+access and allows only these exact commands without a password:
+
+```
+server1 ALL=(ALL) ALL
+server1 ALL=(root) NOPASSWD: /usr/bin/apt update, /usr/bin/apt upgrade -y, /usr/bin/env DEBIAN_FRONTEND=noninteractive /usr/bin/apt upgrade -y, /usr/sbin/sysctl -w vm.drop_caches=3
+```
+
+The Pi is only a jump host; Server-Fo does not run sudo there. The Pi still has
+its cloud-init `NOPASSWD: ALL` rule, which is worth scoping separately if you use
+that account for admin.
+
+**Tailscale.** Restrict the tailnet ACL so the Mac can reach the Pi on port 22
+only, and leave `server1` off the tailnet. The Pi needs TCP forwarding for the
+jump; password auth is off.
+
+**Local files.** The history folder is `0700` and the SQLite database/WAL/SHM
+files are `0600` under
+`~/Library/Application Support/Server-Fo`. The SSH private key is `0600` in a
+`0700` `~/.ssh`; FileVault is on. The database contains container names, resource
+samples, and apt/cache output, so treat it as sensitive.
+
+**Distribution.** The app is ad-hoc signed, not notarised. Verify the release
+SHA-256 and install through the cask; nothing is downloaded at runtime except the
+optional GitHub release check.
 
 ## Troubleshooting
 
@@ -301,9 +356,10 @@ first. The app cannot answer a password prompt; set up a key
 `docker` group, or Docker is not running. `docker ps` in a plain SSH session is
 the test.
 
-**Upgrade fails with exit 1.** Confirm the sudo rule with
-`ssh server1@… 'sudo -n true'`, then open the run in the activity log to read
-the apt error.
+**Upgrade fails with exit 1.** Check the exact rules with
+`ssh server1@… 'sudo -n -l'` and open the run in the activity log. The scoped
+rule allows only `/usr/bin/apt update`, `/usr/bin/apt upgrade -y` and
+`/usr/sbin/sysctl -w vm.drop_caches=3`.
 
 **Cache clear fails with exit 1.** The sudo rule does not allow `sh`. Grant it
 for `/usr/bin/sh` (or the equivalent) and try again; the error is in the

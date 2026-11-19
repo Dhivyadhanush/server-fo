@@ -12,9 +12,10 @@ enum InstanceLock {
         try? FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
 
         let path = directory.appendingPathComponent("Server-Fo.lock").path
-        descriptor = open(path, O_CREAT | O_RDWR, 0o644)
+        descriptor = open(path, O_CREAT | O_RDWR, 0o600)
         // Fail open: a broken lock must not make the app unlaunchable.
         guard descriptor >= 0 else { return true }
+        _ = fchmod(descriptor, 0o600)
         return flock(descriptor, LOCK_EX | LOCK_NB) == 0
     }
 }

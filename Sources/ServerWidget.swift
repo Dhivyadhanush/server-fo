@@ -84,34 +84,12 @@ struct ServerWidgetView: View {
         }
         .frame(width: 288, height: 352)
         .background(
-            ZStack {
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [Theme.surfaceHigh, Theme.surface],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-
-                RadialGradient(
-                    colors: [Theme.accent.opacity(scheme == .dark ? 0.16 : 0.10), .clear],
-                    center: .topLeading,
-                    startRadius: 0,
-                    endRadius: 210
-                )
-            }
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Theme.surface)
         )
         .overlay(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(
-                    LinearGradient(
-                        colors: [Theme.strokeStrong, Theme.stroke.opacity(0.45)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1
-                )
+                .strokeBorder(Theme.stroke, lineWidth: 1)
         )
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
         .shadow(color: .black.opacity(scheme == .dark ? 0.40 : 0.16), radius: 16, y: 7)
@@ -281,7 +259,7 @@ struct ServerWidgetView: View {
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color.primary.opacity(0.08))
                     Capsule()
-                        .fill(LinearGradient(colors: [color, color.opacity(0.6)], startPoint: .leading, endPoint: .trailing))
+                        .fill(color)
                         .frame(width: max(2, geo.size.width * min(1, max(0, fraction))))
                 }
             }

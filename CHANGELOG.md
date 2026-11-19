@@ -4,6 +4,34 @@ All notable changes to Server-Fo. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases use
 [Semantic Versioning](https://semver.org/).
 
+## [1.6.0] — 2026-11-19
+
+### Changed
+
+- Flattened the panel and widget: solid canvas, solid accent tab, flat cards,
+  bars and charts. Removed the radial glows, grid and gradient fills.
+- Settings stays a native macOS Form; the Security section lists the client
+  protections and a copyable hardening summary.
+
+### Security
+
+- SSH now uses `StrictHostKeyChecking=yes`; a changed host key is a hard failure.
+- Client is key-only: no password or keyboard-interactive auth, no agent or X11
+  forwarding, no local commands.
+- Removed ControlMaster/ControlPath; every refresh is a fresh, short-lived SSH
+  session with nothing authenticated left on disk.
+- Forced IPv4 for the Tailscale jump, which also fixes intermittent banner
+  timeouts.
+- Disabled password SSH on the Pi and server via a `00-server-fo-hardening.conf`
+  sshd drop-in.
+- Replaced broad `NOPASSWD: ALL` on `server1` with password-protected admin
+  access plus exact passwordless rules for `/usr/bin/apt update`,
+  `/usr/bin/apt upgrade -y` and `/usr/sbin/sysctl -w vm.drop_caches=3`.
+- RAM cache clearing now uses `sysctl` instead of a passwordless `sh` root shell.
+- History folder is `0700`; SQLite/WAL/SHM and the lock file are `0600`.
+- Settings has a Security section showing the client protections and a copyable
+  hardening summary.
+
 ## [1.5.0] — 2026-11-14
 
 ### Changed

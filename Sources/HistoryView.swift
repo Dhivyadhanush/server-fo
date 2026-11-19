@@ -72,8 +72,8 @@ struct HistoryView: View {
                             .background {
                                 if window == item {
                                     Capsule()
-                                        .fill(Theme.accentGradient)
-                                        .shadow(color: Theme.accent.opacity(0.3), radius: 5, y: 1)
+                                        .fill(Theme.accent)
+                                        .shadow(color: .black.opacity(0.14), radius: 3, y: 1)
                                 }
                             }
                             .contentShape(Rectangle())
@@ -304,8 +304,7 @@ struct HistoryView: View {
         HStack(alignment: .top, spacing: 9) {
             ZStack {
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Theme.violetGradient)
-                    .opacity(0.16)
+                    .fill(Theme.violet.opacity(0.14))
                     .frame(width: 30, height: 30)
                 Image(systemName: "clock.arrow.circlepath")
                     .font(.system(size: 13, weight: .medium))

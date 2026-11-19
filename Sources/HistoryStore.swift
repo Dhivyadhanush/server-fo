@@ -72,7 +72,15 @@ final class HistoryStore {
     init(path: URL? = nil) {
         let support = FileManager.default.homeDirectoryForCurrentUser
             .appendingPathComponent("Library/Application Support/Server-Fo", isDirectory: true)
-        try? FileManager.default.createDirectory(at: support, withIntermediateDirectories: true)
+        try? FileManager.default.createDirectory(
+            at: support,
+            withIntermediateDirectories: true,
+            attributes: [.posixPermissions: 0o700]
+        )
+        try? FileManager.default.setAttributes(
+            [.posixPermissions: 0o700],
+            ofItemAtPath: support.path
+        )
         self.path = path ?? support.appendingPathComponent("history.sqlite")
 
         queue.sync {
@@ -85,6 +93,16 @@ final class HistoryStore {
             }
             sqlite3_exec(self.db, "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL; PRAGMA busy_timeout=3000;", nil, nil, nil)
             self.createSchema()
+            self.securePermissions()
+        }
+    }
+
+    private func securePermissions() {
+        for suffix in ["", "-wal", "-shm"] {
+            try? FileManager.default.setAttributes(
+                [.posixPermissions: 0o600],
+                ofItemAtPath: path.path + suffix
+            )
         }
     }
 

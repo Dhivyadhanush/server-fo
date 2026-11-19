@@ -452,8 +452,7 @@ struct ContainerDetailView: View {
         HStack(spacing: 11) {
             ZStack {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Theme.accentGradient)
-                    .opacity(0.16)
+                    .fill(Theme.accent.opacity(0.14))
                     .frame(width: 46, height: 46)
                 Image(systemName: "shippingbox.fill")
                     .font(.system(size: 20, weight: .medium))

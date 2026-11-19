@@ -49,6 +49,7 @@ struct SettingsView: View {
     @State private var detectingPi = false
     @State private var piMessage: String?
     @State private var pruneMessage: String?
+    @State private var securityMessage: String?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -69,6 +70,7 @@ struct SettingsView: View {
 
             Form {
                 connectionSection
+                securitySection
                 appearanceSection
                 refreshSection
                 historySection
@@ -176,6 +178,51 @@ struct SettingsView: View {
             Text(store.tailscaleEnabled
                  ? "Tailscale is on. Only the Tailscale IP is editable; turn it off to edit the server host."
                  : "Direct LAN is on. Only the server host is editable; turn on Tailscale to edit the Tailscale IP.")
+        }
+    }
+
+    // MARK: Security
+
+    private var securitySection: some View {
+        Section {
+            LabeledContent("SSH host keys", value: "Strict · pinned")
+            LabeledContent("SSH authentication", value: "Public key only")
+            LabeledContent(
+                "Transport",
+                value: store.tailscaleEnabled ? "SSH over Tailscale" : "SSH on local network"
+            )
+            LabeledContent("Local history", value: "0700 folder · 0600 files")
+            Button("Copy hardening notes") {
+                let notes = """
+                Server-Fo security
+                - SSH host keys: strict, pinned in ~/.ssh/known_hosts
+                - SSH auth: public key only; password auth disabled on server and Pi
+                - Transport: SSH end-to-end over Tailscale when enabled
+                - History: ~/Library/Application Support/Server-Fo, 0700 folder / 0600 files
+
+                Scoped server sudo (/etc/sudoers.d/server1):
+                server1 ALL=(ALL) ALL
+                server1 ALL=(root) NOPASSWD: /usr/bin/apt update, /usr/bin/apt upgrade -y, /usr/bin/env DEBIAN_FRONTEND=noninteractive /usr/bin/apt upgrade -y, /usr/sbin/sysctl -w vm.drop_caches=3
+
+                Server and Pi sshd hardening:
+                PasswordAuthentication no
+                KbdInteractiveAuthentication no
+                PermitRootLogin prohibit-password
+                PubkeyAuthentication yes
+                """
+                NSPasteboard.general.clearContents()
+                NSPasteboard.general.setString(notes, forType: .string)
+                securityMessage = "Security notes copied"
+            }
+            if let securityMessage {
+                Text(securityMessage)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+        } header: {
+            Text("Security")
+        } footer: {
+            Text("Client protections are enforced by the app. The server hardening commands are in the README and the copy button above.")
         }
     }
 

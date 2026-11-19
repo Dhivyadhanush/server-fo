@@ -464,14 +464,14 @@ enum Maintenance {
     export LC_ALL=C
     export DEBIAN_FRONTEND=noninteractive
     echo "[serverfo] $(date -Is) apt update"
-    sudo -n apt update
+    sudo -n /usr/bin/apt update
     rc=$?
     if [ $rc -ne 0 ]; then
       echo "[serverfo] apt update failed with exit $rc"
       exit $rc
     fi
     echo "[serverfo] $(date -Is) apt upgrade"
-    sudo -n env DEBIAN_FRONTEND=noninteractive apt upgrade -y
+    sudo -n /usr/bin/env DEBIAN_FRONTEND=noninteractive /usr/bin/apt upgrade -y
     rc=$?
     echo "[serverfo] $(date -Is) apt upgrade exited $rc"
     if [ -f /var/run/reboot-required ]; then
@@ -487,11 +487,11 @@ enum Maintenance {
     echo "[serverfo] $(date -Is) sync"
     sync
     echo "[serverfo] $(date -Is) dropping page cache, dentries and inodes"
-    sudo -n sh -c 'echo 3 > /proc/sys/vm/drop_caches'
+    sudo -n /usr/sbin/sysctl -w vm.drop_caches=3
     rc=$?
     echo "[serverfo] cache clear exited $rc"
     if [ $rc -ne 0 ]; then
-      echo "[serverfo] passwordless sudo for sh is required to drop caches"
+      echo "[serverfo] a scoped sudo rule for /usr/sbin/sysctl is required to drop caches"
     fi
     exit $rc
     """

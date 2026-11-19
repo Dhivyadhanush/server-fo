@@ -155,7 +155,11 @@ enum Headless {
             NSApplication.shared.setActivationPolicy(.accessory)
             let store = Store()
             store.start()
-            await waitForProbe(store)
+            if ProcessInfo.processInfo.environment["SERVERFO_DEMO"] == "1" {
+                store.previewSeed(demoProbe())
+            } else {
+                await waitForProbe(store)
+            }
 
             let root = ZStack {
                 AppBackground()
@@ -178,7 +182,11 @@ enum Headless {
             NSApplication.shared.setActivationPolicy(.accessory)
             let store = Store()
             store.start()
-            await waitForProbe(store)
+            if ProcessInfo.processInfo.environment["SERVERFO_DEMO"] == "1" {
+                store.previewSeed(demoProbe())
+            } else {
+                await waitForProbe(store)
+            }
             let root = ZStack {
                 AppBackground()
                 ContainerDetailView(store: store, name: name, onBack: {})
@@ -240,7 +248,11 @@ enum Headless {
             NSApplication.shared.setActivationPolicy(.accessory)
             let store = Store()
             store.start()
-            await waitForProbe(store)
+            if ProcessInfo.processInfo.environment["SERVERFO_DEMO"] == "1" {
+                store.previewSeed(demoProbe())
+            } else {
+                await waitForProbe(store)
+            }
             let root = ZStack {
                 Color(nsColor: .windowBackgroundColor)
                 SettingsView(store: store)
@@ -250,6 +262,72 @@ enum Headless {
         }
         RunLoop.main.run()
         exit(1)
+    }
+
+    @MainActor
+    private static func demoProbe() -> Probe {
+        var sample = Probe()
+        sample.hostname = "server"
+        sample.os = "Ubuntu 24.04.5 LTS"
+        sample.kernel = "6.8.0-147-generic"
+        sample.dockerVersion = "29.9.0"
+        sample.uptimeSeconds = 21 * 86_400
+        sample.rebootRequired = true
+        sample.ramTotal = 8 * 1_073_741_824
+        sample.ramAvailable = 5 * 1_073_741_824
+        sample.cpuPercent = 12.4
+        sample.cpuCores = 4
+        sample.load1 = 0.84; sample.load5 = 0.49; sample.load15 = 0.36
+        sample.diskTotal = 128 * 1_073_741_824
+        sample.diskUsed = 31 * 1_073_741_824
+        sample.aptUpgradable = (0..<29).map { "package-\($0)" }
+
+        let specs: [(String, String, String, Double, Int64, String, Int)] = [
+            ("linkwarden-postgres-1", "linkwarden", "postgres:16-alpine", 1.8, 1_240_000_000, "5432/tcp", 0),
+            ("linkwarden-meilisearch-1", "linkwarden", "getmeili/meilisearch:v1.13", 0.2, 17_000_000, "7700/tcp", 0),
+            ("linkwarden-linkwarden-1", "linkwarden", "linkwarden:latest", 0.7, 512_000_000, "3000", 0),
+            ("beszel-beszel-1", "beszel", "beszel:latest", 0.03, 48_000_000, "8090", 0),
+            ("beszel-beszel-agent-1", "beszel", "beszel-agent:latest", 0.2, 19_000_000, "", 0),
+            ("ritual", "ritual", "ritual-ritual", 0.0, 21_000_000, "4322", 0),
+            ("ntfy-ntfy-1", "ntfy", "binwiederhier/ntfy", 0.0, 15_000_000, "2586", 0),
+            ("vaultwarden-vaultwarden-1", "vaultwarden", "vaultwarden/server", 1.2, 29_000_000, "8080", 0),
+            ("siyuan-siyuan-1", "siyuan", "b3log/siyuan", 2.3, 134_000_000, "6806", 1),
+            ("uptime-kuma-uptime-kuma-1", "uptime-kuma", "louislam/uptime-kuma", 1.5, 180_000_000, "3001", 0),
+            ("dockge-dockge-1", "dockge", "louislam/dockge", 0.03, 201_000_000, "5001", 0),
+            ("aetherwave-aetherwave-1", "aetherwave", "aetherwave:latest", 0.0, 204_000_000, "3000", 0),
+            ("birthday-birthday-1", "birthday", "birthday:latest", 0.0, 81_000_000, "3100", 0),
+            ("weather-ntfy-weather-ntfy-1", "weather-ntfy", "weather-ntfy:latest", 0.0, 22_000_000, "3102", 0),
+            ("thirsty_shaw", "Standalone", "cloudflared:latest", 0.4, 59_000_000, "", 0),
+            ("modest_ptolemy", "Standalone", "cloudflared:latest", 0.9, 20_000_000, "", 2),
+        ]
+        sample.containers = specs.map { spec in
+            var container = Container(name: spec.0)
+            container.project = spec.1
+            var service = spec.0
+            if spec.1 != "Standalone", service.hasPrefix(spec.1 + "-") {
+                service = String(service.dropFirst(spec.1.count + 1))
+            }
+            if service.hasSuffix("-1") { service = String(service.dropLast(2)) }
+            container.service = service
+            container.image = spec.2
+            container.cpu = spec.3
+            container.memUsed = spec.4
+            let port = spec.5.replacingOccurrences(of: "/tcp", with: "")
+            container.ports = port.isEmpty ? "" : "0.0.0.0:\(port)->\(port)/tcp"
+            container.restarts = spec.6
+            container.uptime = "21 days ago"
+            container.health = spec.6 > 1 ? "" : "healthy"
+            container.state = "running"
+            container.command = "docker-entrypoint.sh"
+            container.startedAt = "2026-10-29T21:00:00Z"
+            container.workingDir = "/opt/stacks/\(spec.1)"
+            container.composeFile = "/opt/stacks/\(spec.1)/compose.yaml"
+            container.networks = "\(spec.1)_default"
+            container.restartPolicy = "unless-stopped"
+            container.pids = 10
+            return container
+        }
+        return sample
     }
 
     @MainActor

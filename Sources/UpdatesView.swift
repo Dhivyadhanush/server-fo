@@ -64,8 +64,7 @@ struct UpdatesView: View {
             HStack(spacing: 6) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Theme.accentGradient)
-                        .opacity(0.18)
+                        .fill(Theme.accent.opacity(0.15))
                         .frame(width: 26, height: 26)
                     Image(systemName: "shippingbox.and.arrow.backward.fill")
                         .font(.system(size: 11, weight: .medium))
@@ -155,11 +154,10 @@ struct UpdatesView: View {
             Circle()
                 .trim(from: 0, to: max(0.02, progress))
                 .stroke(
-                    Theme.accentGradient,
+                    Theme.accent,
                     style: StrokeStyle(lineWidth: 4, lineCap: .round)
                 )
                 .rotationEffect(.degrees(-90))
-                .shadow(color: Theme.accent.opacity(0.4), radius: 3)
             VStack(spacing: -1) {
                 Text(interval <= 0 ? "now" : "\(days)")
                     .font(.system(size: interval <= 0 ? 12 : 16, weight: .heavy, design: .rounded))
@@ -187,8 +185,7 @@ struct UpdatesView: View {
             HStack(spacing: 6) {
                 ZStack {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .fill(Theme.violetGradient)
-                        .opacity(0.18)
+                        .fill(Theme.violet.opacity(0.15))
                         .frame(width: 26, height: 26)
                     Image(systemName: "memorychip.fill")
                         .font(.system(size: 10, weight: .medium))
