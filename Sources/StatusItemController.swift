@@ -16,6 +16,7 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
     private var hotKeyRef: EventHotKeyRef?
     private var eventHandler: EventHandlerRef?
     private var installed = false
+    private var toggleObserver: NSObjectProtocol?
 
     func install(store: Store) {
         guard !installed else { return }
@@ -55,13 +56,13 @@ final class StatusItemController: NSObject, NSPopoverDelegate {
 
         registerHotKey()
 
-        DistributedNotificationCenter.default().addObserver(
+        toggleObserver = DistributedNotificationCenter.default().addObserver(
             forName: NSNotification.Name("dev.dhanuz.server-fo.toggle"),
             object: nil,
             queue: .main
-        ) { _ in
+        ) { [weak self] _ in
             Task { @MainActor in
-                StatusItemController.shared.togglePopover()
+                self?.togglePopover()
             }
         }
     }

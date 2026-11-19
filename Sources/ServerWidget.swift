@@ -53,12 +53,14 @@ final class ServerWidgetController: ObservableObject {
         }
 
         UserDefaults.standard.set(true, forKey: Self.key)
+        CFPreferencesAppSynchronize(kCFPreferencesCurrentApplication)
         isVisible = true
         panel?.orderFrontRegardless()
     }
 
     func hide() {
         UserDefaults.standard.set(false, forKey: Self.key)
+        CFPreferencesAppSynchronize(kCFPreferencesCurrentApplication)
         isVisible = false
         panel?.orderOut(nil)
     }

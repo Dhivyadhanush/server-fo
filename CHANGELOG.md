@@ -4,6 +4,17 @@ All notable changes to Server-Fo. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and releases use
 [Semantic Versioning](https://semver.org/).
 
+## [1.6.1] — 2026-11-19
+
+### Fixed
+
+- The `--toggle` distributed notification observer is now retained, so the
+  menu-bar panel opens from the CLI reliably.
+- Widget visibility is synchronized to preferences immediately; a stale
+  preference can no longer hide the widget after it has been shown.
+- The Dock fallback cannot override menu-bar-only mode unless explicitly
+  enabled.
+
 ## [1.6.0] — 2026-11-19
 
 ### Changed

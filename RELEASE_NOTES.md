@@ -1,6 +1,6 @@
-# Server-Fo 1.6.0
+# Server-Fo 1.6.1
 
-Security hardening plus a cleaner, flatter UI.
+Security hardening, a flatter UI, and two startup/state fixes.
 
 ## Connection security
 
@@ -38,8 +38,15 @@ Security hardening plus a cleaner, flatter UI.
 ## UI
 
 - Flatter, calmer panel and widget: solid canvas, solid accent tab, flat cards
-  and bars, no radial glows or grid.
+  and bars; removed radial glows, the grid and gradient fills.
+- Native Form settings with route-aware address editing.
 - Fixed the blank refresh control while a refresh is running.
+
+## Fixes
+
+- Retained the `--toggle` notification observer.
+- Synchronized widget visibility to preferences immediately.
+- Kept the optional Dock fallback off unless explicitly enabled.
 
 ## Upgrade
 
